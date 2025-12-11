@@ -14,7 +14,9 @@
     var rows = Array.from(table.querySelectorAll('tbody tr'));
     var targets = ['HP', '攻撃', '魔力', '防御', '命中', '敏捷'];
     var lines = [];
-    var total = 0;
+
+    var sumSq = 0;   // 上昇率(小数)² の合計
+    var count = 0;   // カウント（実際に評価に使ったステータス数）
 
     rows.forEach(function (tr) {
       var th = tr.querySelector('th');
@@ -23,7 +25,7 @@
       var label = th.textContent.trim();
       if (targets.indexOf(label) === -1) return;
 
-      // HPだけ全角
+      // HP だけ全角表記
       var dlabel = (label === 'HP') ? 'ＨＰ' : label;
 
       var tds = tr.querySelectorAll('td');
@@ -41,33 +43,46 @@
       var bonus = m ? parseInt(m[1], 10) : 0;
 
       var base = current - bonus;
-      var pct = base ? (bonus / base * 100) : 0;
-      total += pct;
+      if (base <= 0) return; // 変な値は無視
 
-      var baseStr = String(base);
-      var bonusStr = String(bonus);
-
-      // 基礎値: 5 - 桁数 分のスペース
-      var basePad = ' '.repeat(Math.max(0, 5 - baseStr.length));
-      // 上昇値: 4 - 桁数 分のスペース
-      var bonusPad = ' '.repeat(Math.max(0, 4 - bonusStr.length));
-
-      // 上昇割合: 小数1桁、10未満なら頭にスペース1つ
+      // 上昇率（％）
+      var pct = bonus / base * 100;
+      // 表示用：小数1桁、10未満は頭にスペースで桁揃え
       var pctStr = (Math.abs(pct) < 10 ? ' ' : '') + pct.toFixed(1);
 
+      // 基礎値：5 - 桁数分のスペース
+      var baseStr = String(base);
+      var basePad = ' '.repeat(Math.max(0, 5 - baseStr.length));
+
+      // 上昇値：4 - 桁数分のスペース
+      var bonusStr = String(bonus);
+      var bonusPad = ' '.repeat(Math.max(0, 4 - bonusStr.length));
+
+      // 行を追加
       lines.push(
         dlabel + ':' +
         basePad + baseStr +
         '+' + bonusPad + bonusStr +
         ' (+' + pctStr + '%)'
       );
+
+      // 評価値用に小数上昇率を利用（例：12.3% → 0.123）
+      var r = pct / 100;
+      sumSq += r * r;
+      count++;
     });
 
     lines.push('-----------------------');
-    var totalStr = total.toFixed(1);
-    lines.push('合計: +' + totalStr + '%');
 
-    // 右上に表示用のボックス
+    // 評価値計算
+    var evalValue = 10.0;
+    if (count > 0) {
+      var rms = Math.sqrt(sumSq / count);  // 平方平均
+      evalValue = rms * 200 + 10;
+    }
+    lines.push('評価値: ' + evalValue.toFixed(1));
+
+    // 右上に表示用のボックスを作成
     var box = document.createElement('div');
     box.style.cssText =
       'position:fixed;top:10px;right:10px;z-index:99999;' +

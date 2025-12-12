@@ -1,112 +1,160 @@
 (function () {
   try {
     /* ---------- Lv / MaxLv ---------- */
-    var h3 = document.querySelector('div.card_d header.card h3') || document.querySelector('h3');
-    if (!h3) return alert('モンスター画面で使用してください');
+    const h3 =
+      document.querySelector("div.card_d header.card h3") ||
+      document.querySelector("h3");
+    if (!h3) {
+      alert("レベル情報が見つかりません");
+      return;
+    }
 
-    var mLv = h3.textContent.match(/Lv\s*(\d+)\s*\/\s*(\d+)/i);
-    if (!mLv) return alert('Lv/最大Lv形式が見つかりません');
+    const mLv = h3.textContent.match(/Lv\s*(\d+)\s*\/\s*(\d+)/i);
+    if (!mLv) {
+      alert("Lv/最大Lv形式が見つかりません");
+      return;
+    }
 
-    var level = +mLv[1];
-    var maxLevel = +mLv[2];
+    const level = parseInt(mLv[1], 10);
+    const maxLevel = parseInt(mLv[2], 10);
 
     /* ---------- レアリティ係数 ---------- */
-    var rc = ({30:1, 50:1.5, 70:2, 90:2.5})[maxLevel] ?? 1;
-    var t = Math.max(0, (level - 1) / (maxLevel - 1));
-    var G = 1 + rc * t;
-    var sqrtG = Math.sqrt(G);
+    const rcMap = { 30: 1.0, 50: 1.5, 70: 2.0, 90: 2.5 };
+    const rc = rcMap[maxLevel] ?? 1.0;
+
+    const t = Math.max(0, (level - 1) / (maxLevel - 1));
+    const G = 1 + rc * t;
+    const sqrtG = Math.sqrt(G);
 
     /* ---------- Lv1逆算 ---------- */
+    // currentTotal: 現在表示値（HPは最大値を使う。攻撃などは単一値）
+    // bonus: 上昇値
+    // isHP: HPかどうか（HPは補正係数が sqrtG）
     function estimateLv1Base(currentTotal, bonus, isHP) {
       if (currentTotal <= 0) return 0;
+
+      // Lv1なら (Lv1基礎 + 上昇値) ≒ 現在値
       if (level <= 1) return Math.max(1, currentTotal - bonus);
 
-      var factor = isHP ? sqrtG : G;
-      var approx = currentTotal / factor - bonus;
+      const factor = isHP ? sqrtG : G;
+      if (!isFinite(factor) || factor <= 0) return Math.max(1, currentTotal - bonus);
 
-      var best = Math.max(1, Math.floor(approx));
-      var bestDiff = Math.abs(Math.floor((best + bonus) * factor) - currentTotal);
+      // ★割ってから上昇値を引く（(Lv1+bonus)*factor ≒ currentTotal）
+      const approx = currentTotal / factor - bonus;
 
-      for (var v = best - 50; v <= best + 50; v++) {
-        if (v <= 0) continue;
-        var sim = Math.floor((v + bonus) * factor);
-        var diff = Math.abs(sim - currentTotal);
-        if (sim === currentTotal) return v;
+      let best = Math.max(1, Math.floor(approx));
+      let bestDiff = Math.abs(Math.floor((best + bonus) * factor) - currentTotal);
+
+      // ★一致候補が複数あるので「最大の一致候補」を採用する
+      let maxExact = null;
+
+      // 近傍探索（端数切り捨ての影響を吸収）
+      const start = Math.max(1, Math.floor(approx) - 50);
+      const end = Math.floor(approx) + 50;
+
+      for (let cand = start; cand <= end; cand++) {
+        const sim = Math.floor((cand + bonus) * factor);
+        const diff = Math.abs(sim - currentTotal);
+
+        if (sim === currentTotal) {
+          if (maxExact === null || cand > maxExact) maxExact = cand;
+          continue;
+        }
+
         if (diff < bestDiff) {
           bestDiff = diff;
-          best = v;
+          best = cand;
         }
       }
+
+      if (maxExact !== null) return maxExact;
       return best;
     }
 
     /* ---------- ステータス表 ---------- */
-    var cap = [...document.querySelectorAll('div.status table caption')]
-      .find(c => c.textContent.trim() === 'ステータス');
-    if (!cap) return alert('ステータス表が見つかりませんでした');
+    const cap = Array.from(document.querySelectorAll("div.status table caption")).find(
+      (c) => c.textContent.trim() === "ステータス"
+    );
+    if (!cap) {
+      alert("モンスター画面で使用してください");
+      return;
+    }
 
-    var rows = [...cap.closest('table').querySelectorAll('tbody tr')];
-    var targets = ['HP', '攻撃', '魔力', '防御', '命中', '敏捷'];
+    const rows = Array.from(cap.closest("table").querySelectorAll("tbody tr"));
+    const targets = ["HP", "攻撃", "魔力", "防御", "命中", "敏捷"];
 
-    var lines = [];
-    var sumSq = 0, count = 0;
+    const lines = [];
+    let sumSq = 0; // 上昇率(小数)^2 の合計
+    let count = 0; // 評価対象にできた項目数
 
-    rows.forEach(tr => {
-      var th = tr.querySelector('th');
+    rows.forEach((tr) => {
+      const th = tr.querySelector("th");
       if (!th) return;
 
-      var label = th.textContent.trim();
+      const label = th.textContent.trim();
       if (!targets.includes(label)) return;
 
-      var isHP = (label === 'HP');
-      var name = isHP ? 'ＨＰ' : label;
+      const isHP = label === "HP";
+      const name = isHP ? "ＨＰ" : label;
 
-      var tds = tr.querySelectorAll('td');
+      const tds = tr.querySelectorAll("td");
       if (tds.length < 2) return;
 
-      var statText = tds[0].textContent.trim();   // HPなら "2086/2086"
-      var bonusText = tds[1].textContent.trim();  // "(+186)"
+      const statText = tds[0].textContent.trim();  // HPなら "2086/2086"
+      const bonusText = tds[1].textContent.trim(); // "(+186)" など
 
-      // ★ここが修正：HPは「最大値」（/の右側）を使う
-      var parts = statText.split('/');
-      var usedPart = isHP && parts.length >= 2 ? parts[1] : parts[0];
-      var currentTotal = parseInt(usedPart.replace(/[^\d\-]/g, ''), 10);
+      // ★HPは「最大値」（/の右側）を使用。その他は単一値（左側）
+      const parts = statText.split("/");
+      const usedPart = isHP && parts.length >= 2 ? parts[1] : parts[0];
+      const currentTotal = parseInt(usedPart.replace(/[^\d\-]/g, ""), 10);
       if (isNaN(currentTotal)) return;
 
-      var m = bonusText.match(/([+-]?\d+)/);
-      var bonus = m ? parseInt(m[1], 10) : 0;
+      const m = bonusText.match(/([+-]?\d+)/);
+      const bonus = m ? parseInt(m[1], 10) : 0;
 
-      var lv1 = estimateLv1Base(currentTotal, bonus, isHP);
-      if (lv1 <= 0) return;
+      // Lv1基礎を逆算
+      const lv1Base = estimateLv1Base(currentTotal, bonus, isHP);
+      if (lv1Base <= 0) return;
 
-      var pct = bonus / lv1 * 100;
-      var pctStr = (pct < 10 ? ' ' : '') + pct.toFixed(1);
+      // Lv1基準の上昇率（計算は丸めない）
+      const pct = (bonus / lv1Base) * 100;
 
-      var basePad = ' '.repeat(Math.max(0, 5 - String(lv1).length));
-      var bonusPad = ' '.repeat(Math.max(0, 4 - String(bonus).length));
+      // 表示だけ小数1桁（表示用）
+      const pctStr = (Math.abs(pct) < 10 ? " " : "") + pct.toFixed(1);
 
-      lines.push(`${name}:${basePad}${lv1}+${bonusPad}${bonus} (+${pctStr}%)`);
+      // 表示揃え：基礎値は5桁、上昇値は4桁分の左スペース
+      const basePad = " ".repeat(Math.max(0, 5 - String(lv1Base).length));
+      const bonusPad = " ".repeat(Math.max(0, 4 - String(bonus).length));
 
-      var r = pct / 100;
+      lines.push(`${name}:${basePad}${lv1Base}+${bonusPad}${bonus} (+${pctStr}%)`);
+
+      // 評価値用（%→小数）。ここも丸めない
+      const r = pct / 100;
       sumSq += r * r;
       count++;
     });
 
-    lines.push('-----------------------');
-    var ev = count ? Math.sqrt(sumSq / count) * 200 + 10 : 10;
-    lines.push('評価値: ' + ev.toFixed(1));
+    lines.push("-----------------------");
 
-    var box = document.createElement('div');
+    // 評価値（小数1桁で切り捨て）
+    let evalValue = 10.0;
+    if (count) {
+      const raw = Math.sqrt(sumSq / count) * 200 + 10;
+      evalValue = Math.floor(raw * 10) / 10;
+    }
+    lines.push("評価値: " + evalValue.toFixed(1));
+
+    /* ---------- 右上に表示 ---------- */
+    const box = document.createElement("div");
     box.style.cssText =
-      'position:fixed;top:10px;right:10px;z-index:99999;' +
-      'background:rgba(0,0,0,.8);color:#fff;padding:10px 15px;' +
-      'border-radius:8px;font-family:monospace;white-space:pre;' +
-      'cursor:pointer;font-size:14px;max-width:90%;';
-    box.textContent = lines.join('\n');
+      "position:fixed;top:10px;right:10px;z-index:99999;" +
+      "background:rgba(0,0,0,.8);color:#fff;padding:10px 15px;" +
+      "border-radius:8px;font-family:monospace;white-space:pre;" +
+      "cursor:pointer;font-size:14px;max-width:90%;";
+    box.textContent = lines.join("\n");
     box.onclick = () => box.remove();
     document.body.appendChild(box);
-
   } catch (e) {
-    alert('エラー: ' + e.message);
+    alert("エラー: " + e.message);
   }
 })();

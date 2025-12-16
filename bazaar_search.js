@@ -1,4 +1,7 @@
 (() => {
+  // =========================
+  // 設定
+  // =========================
   const Z_INDEX = 2147483647;
   const STORAGE_KEY = "__es_bazaar_ui_v5";
   const WANT_H = 960;
@@ -7,6 +10,9 @@
   const PANEL_ID = "__es_chip_panel";
   const IFRAME_ID = "__es_post_iframe";
 
+  // =========================
+  // 対象フォーム取得
+  // =========================
   const FORM = document.querySelector(
     'form[method="post"][action^="https://eldersign.jp/bazaar"]'
   );
@@ -16,14 +22,17 @@
   }
 
   const selectInForm = (name) => FORM.querySelector(`select[name="${name}"]`);
-  const FM = selectInForm("fm");
-  const RR = selectInForm("rr");
+  const FM = selectInForm("fm"); // ファミリー
+  const RR = selectInForm("rr"); // レアリティ
 
   if (!FM || !RR) {
     alert("fm / rr の select が見つかりません");
     return;
   }
 
+  // =========================
+  // localStorage
+  // =========================
   const load = () => {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
@@ -31,6 +40,7 @@
       return {};
     }
   };
+
   const save = (obj) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
@@ -39,15 +49,21 @@
 
   const saved = load();
 
+  // 指定値が option として存在する場合のみ反映
   const applyIfExists = (sel, val) => {
     if (val == null) return;
     const v = String(val);
-    if (sel.querySelector(`option[value="${CSS.escape(v)}"]`)) sel.value = v;
+    if (sel.querySelector(`option[value="${CSS.escape(v)}"]`)) {
+      sel.value = v;
+    }
   };
 
   applyIfExists(FM, saved.fm);
   applyIfExists(RR, saved.rr);
 
+  // =========================
+  // サイズ計算
+  // =========================
   const isMobile =
     matchMedia("(pointer:coarse)").matches ||
     Math.min(screen.width, screen.height) <= 820;
@@ -55,8 +71,19 @@
   let W = Number(saved.w) || (isMobile ? 360 : 440);
 
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-  const persist = (H) => save({ fm: FM.value, rr: RR.value, w: W, h: H });
 
+  const persist = (H) => {
+    save({
+      fm: FM.value,
+      rr: RR.value,
+      w: W,
+      h: H,
+    });
+  };
+
+  // =========================
+  // スタイル注入
+  // =========================
   const ensureStyle = () => {
     if (document.getElementById(STYLE_ID)) return;
 
@@ -94,7 +121,7 @@
 #${PANEL_ID} button:hover{box-shadow:0 3px 8px rgba(0,0,0,.12)}
 
 /* --- レアリティ色 --- */
-/* 錆びた青銅（緑青） */
+/* 錆びた青銅（緑青っぽい） */
 #${PANEL_ID} label.r_bronze{background:rgba(90,140,120,.22)}
 #${PANEL_ID} input:checked+label.r_bronze{
   background:rgba(90,140,120,.88);color:#fff;border-color:rgba(90,140,120,.88)
@@ -109,7 +136,7 @@
 #${PANEL_ID} input:checked+label.r_gold{
   background:rgba(212,175,55,.92);color:#111;border-color:rgba(212,175,55,.92)
 }
-/* 白金 */
+/* 白金（ピンクと紫の間） */
 #${PANEL_ID} label.r_platinum{background:rgba(215,140,255,.22)}
 #${PANEL_ID} input:checked+label.r_platinum{
   background:rgba(215,140,255,.90);color:#111;border-color:rgba(215,140,255,.90)
@@ -125,12 +152,16 @@
   justify-content: center;
   text-align: center;
 }
-`;
+`.trim();
+
     document.head.appendChild(style);
   };
 
   ensureStyle();
 
+  // =========================
+  // iframe / panel 作成
+  // =========================
   let iframe = document.getElementById(IFRAME_ID);
   if (!iframe) {
     iframe = document.createElement("iframe");
@@ -140,7 +171,7 @@
 position:fixed;right:10px;bottom:10px;z-index:${Z_INDEX};
 background:#fff;border:1px solid rgba(0,0,0,.25);
 border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.28);
-overflow:hidden`;
+overflow:hidden`.trim();
     document.body.appendChild(iframe);
   }
 
@@ -155,13 +186,20 @@ backdrop-filter:saturate(1.2) blur(6px);
 border:1px solid rgba(0,0,0,.18);
 border-radius:14px;
 box-shadow:0 10px 28px rgba(0,0,0,.18);
-padding:7px 7px 6px;color:#111`;
+padding:7px 7px 6px;color:#111`.trim();
     document.body.appendChild(panel);
   }
 
+  // =========================
+  // ユーティリティ
+  // =========================
   const optList = (sel) =>
-    Array.from(sel.options).map((o) => ({ v: o.value, t: (o.textContent || "").trim() }));
+    Array.from(sel.options).map((o) => ({
+      v: o.value,
+      t: (o.textContent || "").trim(),
+    }));
 
+  // submit連打を避けるためのデバウンス
   const submit = (() => {
     let t = 0;
     return () => {
@@ -173,18 +211,134 @@ padding:7px 7px 6px;color:#111`;
     };
   })();
 
+  // レアリティ表示（銀/金はスペースなし）
   const rarityText = (t) =>
-    t === "ブロンズ" ? "青銅" :
-    t === "シルバー" ? "銀" :
-    t === "ゴールド" ? "金" :
-    t === "プラチナ" ? "白金" : t;
+    t === "ブロンズ"
+      ? "青銅"
+      : t === "シルバー"
+      ? "銀"
+      : t === "ゴールド"
+      ? "金"
+      : t === "プラチナ"
+      ? "白金"
+      : t;
 
+  // レアリティの色クラス
   const rarityClass = (v) =>
-    String(v) === "1" ? "r_bronze" :
-    String(v) === "2" ? "r_silver" :
-    String(v) === "3" ? "r_gold" :
-    String(v) === "4" ? "r_platinum" : "";
+    String(v) === "1"
+      ? "r_bronze"
+      : String(v) === "2"
+      ? "r_silver"
+      : String(v) === "3"
+      ? "r_gold"
+      : String(v) === "4"
+      ? "r_platinum"
+      : "";
 
+  // =========================
+  // 破棄（閉じる）
+  // =========================
+  const teardown = () => {
+    try {
+      document.getElementById(PANEL_ID)?.remove();
+    } catch {}
+    try {
+      document.getElementById(IFRAME_ID)?.remove();
+    } catch {}
+    try {
+      document.getElementById(STYLE_ID)?.remove();
+    } catch {}
+  };
+
+  // =========================
+  // iframe内遷移の抑止 & 親へ遷移
+  // =========================
+  const installIframeHijack = () => {
+    try {
+      const doc = iframe.contentDocument;
+      const win = iframe.contentWindow;
+      if (!doc || !win) return;
+
+      // 同じドキュメントに二重登録しない
+      if (doc.__esHijackInstalled) return;
+      doc.__esHijackInstalled = true;
+
+      // aクリックを親へ
+      doc.addEventListener(
+        "click",
+        (e) => {
+          const a = e.target?.closest?.("a[href]");
+          if (!a) return;
+
+          const href = a.getAttribute("href");
+          if (!href || href.startsWith("#") || href.startsWith("javascript:"))
+            return;
+
+          const url = new URL(href, win.location.href).toString();
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          teardown();
+          window.location.href = url;
+        },
+        true
+      );
+
+      // form送信を親へ（GET/POST両対応）
+      doc.addEventListener(
+        "submit",
+        (e) => {
+          const form = e.target;
+          if (!(form instanceof HTMLFormElement)) return;
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          const method = (form.getAttribute("method") || "GET").toUpperCase();
+          const action = form.getAttribute("action") || win.location.href;
+          const actionUrl = new URL(action, win.location.href).toString();
+
+          teardown();
+
+          if (method === "GET") {
+            const params = new URLSearchParams(new FormData(form));
+            const u = new URL(actionUrl);
+            params.forEach((v, k) => u.searchParams.append(k, v));
+            window.location.href = u.toString();
+            return;
+          }
+
+          // POSTは親ページで再現して送る
+          const f = document.createElement("form");
+          f.method = "POST";
+          f.action = actionUrl;
+          f.style.display = "none";
+
+          for (const [k, v] of new FormData(form).entries()) {
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = k;
+            input.value = String(v);
+            f.appendChild(input);
+          }
+
+          document.body.appendChild(f);
+          f.submit();
+        },
+        true
+      );
+    } catch {
+      // 別オリジンなどで触れない場合は何もしない
+    }
+  };
+
+  // iframeのロードごとに仕込む
+  iframe.addEventListener("load", installIframeHijack);
+
+  // =========================
+  // Chipsグループ生成
+  // =========================
   const mkGroup = (name, title, opts, cur, onChange, textFn, labelClassFn) => {
     const d = document.createElement("div");
     d.className = "row";
@@ -203,7 +357,9 @@ padding:7px 7px 6px;color:#111`;
       r.id = id;
       r.value = o.v;
       r.checked = String(o.v) === String(cur);
-      r.onchange = () => r.checked && onChange(o.v);
+      r.onchange = () => {
+        if (r.checked) onChange(o.v);
+      };
 
       const l = document.createElement("label");
       l.className = "chip";
@@ -224,12 +380,9 @@ padding:7px 7px 6px;color:#111`;
     return d;
   };
 
-  const teardown = () => {
-    document.getElementById(PANEL_ID)?.remove();
-    document.getElementById(IFRAME_ID)?.remove();
-    document.getElementById(STYLE_ID)?.remove();
-  };
-
+  // =========================
+  // 描画
+  // =========================
   const render = () => {
     panel.innerHTML = "";
 
@@ -246,16 +399,21 @@ padding:7px 7px 6px;color:#111`;
 
     const b1 = document.createElement("button");
     b1.textContent = "検索";
-    b1.onclick = submit;
+    b1.onclick = () => submit();
 
     const b2 = document.createElement("button");
     b2.textContent = "閉じる";
-    b2.onclick = teardown;
+    b2.onclick = () => teardown();
 
-    btns.append(b1, b2);
-    head.append(ttl, btns);
+    btns.appendChild(b1);
+    btns.appendChild(b2);
+
+    head.appendChild(ttl);
+    head.appendChild(btns);
+
     panel.appendChild(head);
 
+    // ファミリー
     panel.appendChild(
       mkGroup("es_fm", "ファミリー", optList(FM), FM.value, (v) => {
         FM.value = v;
@@ -264,6 +422,7 @@ padding:7px 7px 6px;color:#111`;
       })
     );
 
+    // レアリティ
     panel.appendChild(
       mkGroup(
         "es_rr",
@@ -283,12 +442,17 @@ padding:7px 7px 6px;color:#111`;
 
   render();
 
+  // =========================
+  // レイアウト（画面に収まる高さへ）
+  // =========================
   const layout = () => {
     W = clamp(W, 320, Math.max(320, window.innerWidth - 40));
-    panel.style.width = iframe.style.width = `${W}px`;
+    panel.style.width = `${W}px`;
+    iframe.style.width = `${W}px`;
 
     const panelH = panel.getBoundingClientRect().height;
     const maxH = window.innerHeight - panelH - 34;
+
     const H = clamp(Math.min(WANT_H, maxH), 260, maxH);
 
     iframe.style.height = `${H}px`;
@@ -300,6 +464,10 @@ padding:7px 7px 6px;color:#111`;
   layout();
   window.addEventListener("resize", layout, { passive: true });
 
+  // 初回表示で検索（白紙対策）
   FORM.setAttribute("target", IFRAME_ID);
   submit();
+
+  // ロード済みだった場合に備えて一度トライ
+  installIframeHijack();
 })();

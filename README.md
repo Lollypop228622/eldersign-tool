@@ -3,8 +3,10 @@
 
 # お品書き
 ### ステータス 詳細表示
-`javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/monster_status.js?"+Date.now();document.head.appendChild(s);})();`
-`
+```javascript
+javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/monster_status.js?"+Date.now();document.head.appendChild(s);})();
+```
+
 - 個体値の%を計算するやつ
 - モンスター画面で使用可能
 - 次のグレードに必要な個体値を追加予定

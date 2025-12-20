@@ -14,7 +14,7 @@ javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-ka
 - Wikiリンクを追加検討中
 - セラエノの影響を調査中
 
-![status](./image/status.png)
+<img src="./image/status.png" alt="status" style="width:320px; max-width:100%;">
 
 ### バザー 検索ボタン
 ```javascript
@@ -24,7 +24,7 @@ javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-ka
 - バザー画面で使用可能
 - 初期値がおかしいケースがあることを確認しているけど直す気はあまりない
 
-![bazaar](./image/bazaar.png)
+<img src="./image/bazaar.png" alt="bazaar" style="width:320px; max-width:100%;">
 
 ### バザー 全種族・全グレード検索
 ```javascript
@@ -44,7 +44,7 @@ javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-ka
 - バザーなら1any当たりの経験値効率表示
 - バザーなら経験値効率でソート
 
-![exp](./image/exp.png)
+<img src="./image/exp.png" alt="exp" style="width:320px; max-width:100%;">
 
 ### Wiki 検索
 ```javascript

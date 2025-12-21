@@ -5,15 +5,13 @@
 # お品書き
 ### ステータス 詳細表示
 ```javascript
-javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/monster_status.js?d="+new Date().toISOString().slice(0,10);document.head.appendChild(s);})();
+javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/monster_status.js";document.head.appendChild(s);})();
 ```
 
 - 個体値の%を計算するやつ
+- 開くと最大レベルと次のグレードも出る
 - モンスター画面で使用可能
-- [x] 次のグレードに必要な個体値を追加予定
-- [x] 合成経験値を追加予定
 - [ ] スキル継承率の追加検討中
-- [ ] Wikiリンクを追加検討中
 - [ ] セラエノの影響を調査中
 
 #### 評価値
@@ -30,7 +28,7 @@ javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-ka
 
 ### バザー 検索ボタン
 ```javascript
-javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/bazaar_search.js?d="+new Date().toISOString().slice(0,10);document.head.appendChild(s);})();
+javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/bazaar_search.js";document.head.appendChild(s);})();
 ```
 - バザー検索条件の変更を楽にする
 - バザー画面で使用可能
@@ -40,7 +38,7 @@ javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-ka
 
 ### バザー 全種族・全グレード検索
 ```javascript
-javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/bazaar_all.js?d="+new Date().toISOString().slice(0,10);document.head.appendChild(s);})();
+javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/bazaar_all.js";document.head.appendChild(s);})();
 ```
 - 4種族 * 4グレード = 16通りのバザー検索を実行する
 - バザー画面で使用可能
@@ -49,7 +47,7 @@ javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-ka
 
 ### 経験値 表示
 ```javascript
-javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/exp.js?d="+new Date().toISOString().slice(0,10);document.head.appendChild(s);})();
+javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/exp.js";document.head.appendChild(s);})();
 ```
 - 合成時に取得できる経験値を表示する
 - バザー・手持ち・合成・ガチャなどのモンスター一覧画面で使用可能
@@ -60,7 +58,7 @@ javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-ka
 
 ### Wiki 検索
 ```javascript
-javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/wiki_search.js?d="+new Date().toISOString().slice(0,10);document.head.appendChild(s);})();
+javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/wiki_search.js";document.head.appendChild(s);})();
 ```
 - Wikiの検索結果画面を出す
 - 検索ワードを範囲指定した状態で使用可能
@@ -69,7 +67,7 @@ javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-ka
 
 ### I'm Feeling Lucky
 ```javascript
-javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/wiki_feel_lucky.js?d="+new Date().toISOString().slice(0,10);document.head.appendChild(s);})();
+javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/wiki_feel_lucky.js";document.head.appendChild(s);})();
 ```
 - Wikiの検索結果の一番上のリンクに飛ぶ
 - Wikiの検索結果画面で使用可能

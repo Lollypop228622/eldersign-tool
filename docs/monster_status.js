@@ -88,8 +88,9 @@
     }
 
     /* ---------- ステータス表 ---------- */
-    const cap = [...document.querySelectorAll("div.status table caption")]
-      .find(c => c.textContent.trim() === "ステータス");
+    const cap = [...document.querySelectorAll("div.status table caption")].find(
+      (c) => c.textContent.trim() === "ステータス"
+    );
     if (!cap) {
       alert("モンスター画面で使用してください");
       return;
@@ -99,9 +100,11 @@
     const targets = ["HP", "攻撃", "魔力", "防御", "命中", "敏捷"];
 
     const lines = [];
-    let sumSq = 0, count = 0;
+    let sumSq = 0;
 
-    rows.forEach(tr => {
+    const statInfo = {}; // { label: { name, base, bonus, r } }
+
+    rows.forEach((tr) => {
       const th = tr.querySelector("th");
       if (!th) return;
 
@@ -125,28 +128,28 @@
       const m = bonusText.match(/([+-]?\d+)/);
       const bonus = m ? parseInt(m[1], 10) : 0;
 
-      const lv1Base = estimateLv1Base(currentTotal, bonus, isHP);
-      if (lv1Base <= 0) return;
+      const base = estimateLv1Base(currentTotal, bonus, isHP);
+      if (base <= 0) return;
 
-      const pct = (bonus / lv1Base) * 100;
-      const pctStr = (Math.abs(pct) < 10 ? " " : "") + pct.toFixed(1);
+      const r = bonus / base;
+      const pct = r * 100;
 
-      const basePad = " ".repeat(Math.max(0, 5 - String(lv1Base).length));
+      const pctStr = String(pct.toFixed(1)).padStart(4, " ");
+      const basePad = " ".repeat(Math.max(0, 5 - String(base).length));
       const bonusPad = " ".repeat(Math.max(0, 4 - String(bonus).length));
 
-      lines.push(`${name}:${basePad}${lv1Base}+${bonusPad}${bonus} (+${pctStr}%)`);
+      lines.push(`${name}:${basePad}${base}+${bonusPad}${bonus} (${pctStr}%)`);
 
-      const r = pct / 100;
       sumSq += r * r;
-      count++;
+      statInfo[label] = { name, base, bonus, r };
     });
 
+    // 評価値（小数1桁切り捨て）
     let evalValue = 10.0;
-    if (count) {
-      const raw = Math.sqrt(sumSq / count) * 200 + 10;
-      evalValue = Math.floor(raw * 10) / 10;
-    }
+    const raw = Math.sqrt(sumSq / 6) * 200 + 10;
+    evalValue = Math.floor(raw * 10) / 10;
 
+    /* ---------- 経験値 ---------- */
     const gradeImg = document.querySelector('img[src*="/img/menu/grade_"]');
     let grade = null;
     if (gradeImg) {
@@ -159,19 +162,81 @@
 
     if (grade != null) {
       const baseExp = expRarityFactor * grade * ((level + 4) / 5) * 16;
-      const expOther = Math.floor(baseExp);
-      const expSame = Math.floor(baseExp * 1.125);
-      lines.push(`経験値: 異${expOther} / 同${expSame}`);
+      const expO = Math.floor(baseExp);
+      const expS = Math.floor(baseExp * 1.125);
+      lines.push(`経験値: 異${expO} / 同${expS}`);
     } else {
       lines.push("経験値: 取得失敗");
     }
 
+    lines.push("-----------------------");
+
+    /* ---------- 次のグレード ---------- */
+    const currentTens = Math.floor(evalValue / 10);
+    const target = (currentTens + 1) * 10;
+
+    function rawEval(sumR2) {
+      return Math.sqrt(sumR2 / 6) * 200 + 10;
+    }
+
+    function sumR2Override(label, newB) {
+      let s = 0;
+      for (const k of targets) {
+        const info = statInfo[k];
+        if (!info) continue;
+        const b = k === label ? newB : info.bonus;
+        const r = b / info.base;
+        s += r * r;
+      }
+      return s;
+    }
+
+    function findMin(label) {
+      const info = statInfo[label];
+      if (!info) return null;
+
+      let S = 0;
+      for (const k of targets) {
+        if (k === label) continue;
+        const o = statInfo[k];
+        if (o) S += o.r * o.r;
+      }
+
+      const k = (target - 10) / 200;
+      const need = Math.max(0, 6 * k * k - S);
+      let start = Math.max(info.bonus, Math.ceil(Math.sqrt(need) * info.base) - 3);
+
+      for (let b = start; b <= info.bonus + 20000; b++) {
+        if (rawEval(sumR2Override(label, b)) >= target) return b;
+      }
+      return null;
+    }
+
+    const pad4 = (n) => String(n).padStart(4, " ");
+    const pad3 = (n) => String(n).padStart(3, " ");
+    const padPct = (x) => String(x.toFixed(1)).padStart(4, " ");
+
+    lines.push("次のグレードになるには");
+    for (const label of targets) {
+      const info = statInfo[label];
+      if (!info) continue;
+
+      const b = findMin(label);
+      if (b == null) continue;
+
+      const pct = (b / info.base) * 100;
+      const delta = b - info.bonus;
+
+      lines.push(
+        `${info.name}なら${pad4(b)}(${padPct(pct)}%) あと${pad3(delta)}`
+      );
+    }
+
     const box = document.createElement("div");
     box.style.cssText =
-      "position:fixed;top:10px;right:10px;z-index:99999;" +
-      "background:rgba(0,0,0,.8);color:#fff;padding:10px 15px;" +
-      "border-radius:8px;font-family:monospace;white-space:pre;" +
-      "cursor:pointer;font-size:14px;max-width:90%;";
+      "position:fixed;top:10px;right:10px;z-index:99999;background:rgba(0,0,0,.8);" +
+      "color:#fff;padding:10px 15px;border-radius:8px;font-family:monospace;" +
+      "white-space:pre;cursor:pointer;font-size:14px;max-width:90%;";
     box.textContent = lines.join("\n");
     box.onclick = () => box.remove();
     document.body.appendChild(box);

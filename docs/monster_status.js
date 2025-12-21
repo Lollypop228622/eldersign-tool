@@ -1,115 +1,117 @@
 (function () {
-  try {
-    /* ---------- Lv / MaxLv ---------- */
+  const RARITY = Object.freeze({
+    BRONZE: "BRONZE",
+    SILVER: "SILVER",
+    GOLD: "GOLD",
+    PLATINUM: "PLATINUM",
+  });
+
+  const RARITY_BY_MAX_LEVEL = Object.freeze({
+    30: RARITY.BRONZE,
+    50: RARITY.SILVER,
+    70: RARITY.GOLD,
+    90: RARITY.PLATINUM,
+  });
+
+  const GROWTH_COEFF_BY_RARITY = Object.freeze({
+    [RARITY.BRONZE]: 1.0,
+    [RARITY.SILVER]: 1.5,
+    [RARITY.GOLD]: 2.0,
+    [RARITY.PLATINUM]: 2.5,
+  });
+
+  const EXP_COEFF_BY_RARITY = Object.freeze({
+    [RARITY.BRONZE]: 1,
+    [RARITY.SILVER]: 2,
+    [RARITY.GOLD]: 4,
+    [RARITY.PLATINUM]: 8,
+  });
+
+  const TARGETS = ["HP", "攻撃", "魔力", "防御", "命中", "敏捷"];
+
+  function getLevelInfo() {
     const h3 =
       document.querySelector("div.card_d header.card h3") ||
       document.querySelector("h3");
     if (!h3) {
       alert("レベル情報が見つかりません");
-      return;
+      return null;
     }
 
     const mLv = h3.textContent.match(/Lv\s*(\d+)\s*\/\s*(\d+)/i);
     if (!mLv) {
       alert("Lv/最大Lv形式が見つかりません");
-      return;
+      return null;
     }
 
-    const level = parseInt(mLv[1], 10);
-    const maxLevel = parseInt(mLv[2], 10);
+    return { level: parseInt(mLv[1], 10), maxLevel: parseInt(mLv[2], 10) };
+  }
 
-    /* ---------- レアリティ（定数） ---------- */
-    const RARITY = Object.freeze({
-      BRONZE: "BRONZE",
-      SILVER: "SILVER",
-      GOLD: "GOLD",
-      PLATINUM: "PLATINUM",
-    });
+  function getRarity(maxLevel) {
+    return RARITY_BY_MAX_LEVEL[maxLevel] ?? RARITY.BRONZE;
+  }
 
-    const rarityByMaxLevel = Object.freeze({
-      30: RARITY.BRONZE,
-      50: RARITY.SILVER,
-      70: RARITY.GOLD,
-      90: RARITY.PLATINUM,
-    });
-    const rarity = rarityByMaxLevel[maxLevel] ?? RARITY.BRONZE;
-
-    const growthCoeffByRarity = Object.freeze({
-      [RARITY.BRONZE]: 1.0,
-      [RARITY.SILVER]: 1.5,
-      [RARITY.GOLD]: 2.0,
-      [RARITY.PLATINUM]: 2.5,
-    });
-    const rc = growthCoeffByRarity[rarity] ?? 1.0;
-
-    const expCoeffByRarity = Object.freeze({
-      [RARITY.BRONZE]: 1,
-      [RARITY.SILVER]: 2,
-      [RARITY.GOLD]: 4,
-      [RARITY.PLATINUM]: 8,
-    });
-    const expRarityFactor = expCoeffByRarity[rarity] ?? 1;
-
+  function getGrowth(level, maxLevel, rarity) {
+    const rc = GROWTH_COEFF_BY_RARITY[rarity] ?? 1.0;
     const t = Math.max(0, (level - 1) / (maxLevel - 1));
     const G = 1 + rc * t;
-    const sqrtG = Math.sqrt(G);
+    return { G, sqrtG: Math.sqrt(G) };
+  }
 
-    /* ---------- Lv1逆算 ---------- */
-    function estimateLv1Base(currentTotal, bonus, isHP) {
-      if (currentTotal <= 0) return 0;
-      if (level <= 1) return Math.max(1, currentTotal - bonus);
+  function estimateLv1Base(currentTotal, bonus, isHP, level, G, sqrtG) {
+    if (currentTotal <= 0) return 0;
+    if (level <= 1) return Math.max(1, currentTotal - bonus);
 
-      const factor = isHP ? sqrtG : G;
-      if (!isFinite(factor) || factor <= 0) return Math.max(1, currentTotal - bonus);
+    const factor = isHP ? sqrtG : G;
+    if (!isFinite(factor) || factor <= 0) return Math.max(1, currentTotal - bonus);
 
-      const approx = currentTotal / factor - bonus;
+    const approx = currentTotal / factor - bonus;
 
-      let best = Math.max(1, Math.floor(approx));
-      let bestDiff = Math.abs(Math.floor((best + bonus) * factor) - currentTotal);
-      let maxExact = null;
+    let best = Math.max(1, Math.floor(approx));
+    let bestDiff = Math.abs(Math.floor((best + bonus) * factor) - currentTotal);
+    let maxExact = null;
 
-      const start = Math.max(1, Math.floor(approx) - 50);
-      const end = Math.floor(approx) + 50;
+    const start = Math.max(1, Math.floor(approx) - 50);
+    const end = Math.floor(approx) + 50;
 
-      for (let cand = start; cand <= end; cand++) {
-        const sim = Math.floor((cand + bonus) * factor);
-        const diff = Math.abs(sim - currentTotal);
+    for (let cand = start; cand <= end; cand++) {
+      const sim = Math.floor((cand + bonus) * factor);
+      const diff = Math.abs(sim - currentTotal);
 
-        if (sim === currentTotal) {
-          if (maxExact === null || cand > maxExact) maxExact = cand;
-          continue;
-        }
-        if (diff < bestDiff) {
-          bestDiff = diff;
-          best = cand;
-        }
+      if (sim === currentTotal) {
+        if (maxExact === null || cand > maxExact) maxExact = cand;
+        continue;
       }
-      return maxExact !== null ? maxExact : best;
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        best = cand;
+      }
     }
+    return maxExact !== null ? maxExact : best;
+  }
 
-    /* ---------- ステータス表 ---------- */
+  function getStatusRows() {
     const cap = [...document.querySelectorAll("div.status table caption")].find(
       (c) => c.textContent.trim() === "ステータス"
     );
     if (!cap) {
       alert("モンスター画面で使用してください");
-      return;
+      return null;
     }
+    return [...cap.closest("table").querySelectorAll("tbody tr")];
+  }
 
-    const rows = [...cap.closest("table").querySelectorAll("tbody tr")];
-    const targets = ["HP", "攻撃", "魔力", "防御", "命中", "敏捷"];
-
+  function collectStats(rows, level, G, sqrtG) {
     const lines = [];
     let sumSq = 0;
-
-    const statInfo = {}; // { label: { name, base, bonus, r } }
+    const statInfo = {};
 
     rows.forEach((tr) => {
       const th = tr.querySelector("th");
       if (!th) return;
 
       const label = th.textContent.trim();
-      if (!targets.includes(label)) return;
+      if (!TARGETS.includes(label)) return;
 
       const isHP = label === "HP";
       const name = isHP ? "ＨＰ" : label;
@@ -128,7 +130,7 @@
       const m = bonusText.match(/([+-]?\d+)/);
       const bonus = m ? parseInt(m[1], 10) : 0;
 
-      const base = estimateLv1Base(currentTotal, bonus, isHP);
+      const base = estimateLv1Base(currentTotal, bonus, isHP, level, G, sqrtG);
       if (base <= 0) return;
 
       const r = bonus / base;
@@ -144,32 +146,22 @@
       statInfo[label] = { name, base, bonus, r };
     });
 
-    // 評価値（小数1桁切り捨て）
-    let evalValue = 10.0;
+    return { lines, sumSq, statInfo };
+  }
+
+  function calcEval(sumSq) {
     const raw = Math.sqrt(sumSq / 6) * 200 + 10;
-    evalValue = Math.floor(raw * 10) / 10;
+    return Math.floor(raw * 10) / 10;
+  }
 
-    /* ---------- 経験値 ---------- */
+  function getGrade() {
     const gradeImg = document.querySelector('img[src*="/img/menu/grade_"]');
-    let grade = null;
-    if (gradeImg) {
-      const gm = gradeImg.src.match(/grade_(\d+)\.png/i);
-      if (gm) grade = parseInt(gm[1], 10);
-    }
+    if (!gradeImg) return null;
+    const gm = gradeImg.src.match(/grade_(\d+)\.png/i);
+    return gm ? parseInt(gm[1], 10) : null;
+  }
 
-    lines.push("-----------------------");
-    lines.push("評価値: " + evalValue.toFixed(1));
-
-    if (grade != null) {
-      const baseExp = expRarityFactor * grade * ((level + 4) / 5) * 16;
-      const expO = Math.floor(baseExp);
-      const expS = Math.floor(baseExp * 1.125);
-      lines.push(`経験値: 異${expO} / 同${expS}`);
-    } else {
-      lines.push("経験値: 取得失敗");
-    }
-
-    /* ---------- 次のグレード ---------- */
+  function buildNextGradeLines(statInfo, evalValue) {
     const currentTens = Math.floor(evalValue / 10);
     const target = (currentTens + 1) * 10;
 
@@ -179,7 +171,7 @@
 
     function sumR2Override(label, newB) {
       let s = 0;
-      for (const k of targets) {
+      for (const k of TARGETS) {
         const info = statInfo[k];
         if (!info) continue;
         const b = k === label ? newB : info.bonus;
@@ -194,7 +186,7 @@
       if (!info) return null;
 
       let S = 0;
-      for (const k of targets) {
+      for (const k of TARGETS) {
         if (k === label) continue;
         const o = statInfo[k];
         if (o) S += o.r * o.r;
@@ -214,10 +206,10 @@
     const pad3 = (n) => String(n).padStart(3, " ");
     const padPct = (x) => String(x.toFixed(1)).padStart(4, " ");
 
-    const nextGradeLines = [];
-    nextGradeLines.push("-----------------------");
-    nextGradeLines.push("次のグレードになるには");
-    for (const label of targets) {
+    const lines = [];
+    lines.push("-----------------------");
+    lines.push("次のグレードになるには");
+    for (const label of TARGETS) {
       const info = statInfo[label];
       if (!info) continue;
 
@@ -227,11 +219,13 @@
       const pct = (b / info.base) * 100;
       const delta = b - info.bonus;
 
-      nextGradeLines.push(
-        `${info.name}なら${pad4(b)}(${padPct(pct)}%) あと${pad3(delta)}`
-      );
+      lines.push(`${info.name}なら${pad4(b)}(${padPct(pct)}%) あと${pad3(delta)}`);
     }
 
+    return lines;
+  }
+
+  function renderPanel(lines, nextGradeLines) {
     const box = document.createElement("div");
     box.style.cssText =
       "position:fixed;top:10px;right:10px;z-index:99999;background:rgba(0,0,0,.8);" +
@@ -270,6 +264,38 @@
       box.remove();
     };
     document.body.appendChild(box);
+  }
+
+  try {
+    const levelInfo = getLevelInfo();
+    if (!levelInfo) return;
+
+    const { level, maxLevel } = levelInfo;
+    const rarity = getRarity(maxLevel);
+    const { G, sqrtG } = getGrowth(level, maxLevel, rarity);
+    const expRarityFactor = EXP_COEFF_BY_RARITY[rarity] ?? 1;
+
+    const rows = getStatusRows();
+    if (!rows) return;
+
+    const { lines, sumSq, statInfo } = collectStats(rows, level, G, sqrtG);
+    const evalValue = calcEval(sumSq);
+    const grade = getGrade();
+
+    lines.push("-----------------------");
+    lines.push("評価値: " + evalValue.toFixed(1));
+
+    if (grade != null) {
+      const baseExp = expRarityFactor * grade * ((level + 4) / 5) * 16;
+      const expO = Math.floor(baseExp);
+      const expS = Math.floor(baseExp * 1.125);
+      lines.push(`経験値: 異${expO} / 同${expS}`);
+    } else {
+      lines.push("経験値: 取得失敗");
+    }
+
+    const nextGradeLines = buildNextGradeLines(statInfo, evalValue);
+    renderPanel(lines, nextGradeLines);
   } catch (e) {
     alert("エラー: " + e.message);
   }

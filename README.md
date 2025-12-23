@@ -28,6 +28,17 @@ javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-ka
 
 <img src="./image/status.png" alt="status" style="width:320px; max-width:100%;">
 
+### コンパニオン 派遣研究力
+```javascript
+javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/companion.js";document.head.appendChild(s);})();
+```
+
+- コンパニオンの研究力表示
+- コンパニオン画面で使用可能
+- 数字や施設名タップで派遣画面へ遷移
+
+<img src="./image/companion.png" alt="companion" style="width:320px; max-width:100%;">
+
 ### バザー 検索ボタン
 ```javascript
 javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/bazaar_search.js";document.head.appendChild(s);})();

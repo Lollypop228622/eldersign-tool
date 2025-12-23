@@ -5,7 +5,7 @@
   const GRID = [
     [
       { label: "魔獣", stat: "攻撃", t: 0 },
-      { label: "竜　", stat: "攻撃", t: 1 },
+      { label: "竜", stat: "攻撃", t: 1 },
       { label: "象牙", stat: "敏捷", t: 2 },
     ],
     [
@@ -15,12 +15,13 @@
     ],
     [
       { label: "混沌", stat: "防御", t: 6 },
-      { label: "緑　", stat: "防御", t: 7 },
+      { label: "緑", stat: "防御", t: 7 },
       { label: "星辰", stat: "命中", t: 8 },
     ],
     [
       { label: "投資", stat: "命中", t: 9 },
       { label: "アクア", stat: "敏捷", t: 10 },
+      { label: "", stat: null, t: null },
     ],
   ];
 
@@ -80,7 +81,7 @@
     }
   }
 
-  function renderPanel(linesHtml) {
+  function renderPanel(content) {
     document.getElementById(PANEL_ID)?.remove();
 
     const box = document.createElement("div");
@@ -90,10 +91,7 @@
       "color:#fff;padding:10px 15px;border-radius:8px;font-family:monospace;" +
       "font-size:14px;max-width:90%;";
 
-    const pre = document.createElement("pre");
-    pre.style.cssText = "margin:0;white-space:pre;";
-    pre.innerHTML = linesHtml.join("\n");
-    box.appendChild(pre);
+    box.appendChild(content);
 
     box.onclick = () => box.remove();
     document.body.appendChild(box);
@@ -124,44 +122,68 @@
       return;
     }
 
-    const SCORE_WIDTH = 4;
-    const LABEL_WIDTH = 2;
-
-    const padRight = (text, width) => {
-      const pad = Math.max(0, width - text.length);
-      return text + "&nbsp;".repeat(pad);
-    };
-
     const cid = getCid();
-    const mkLink = (text, t) => {
-      if (!cid) return text;
-      return (
-        `<a href="https://eldersign.jp/union_facility?cmd=v&t=${t}&cid=${cid}&pg=0&r=t" ` +
-        `style="color:inherit;text-decoration:none;">${text}</a>`
-      );
+    const mkLinkEl = (text, t) => {
+      if (!cid) {
+        const span = document.createElement("span");
+        span.textContent = text;
+        return span;
+      }
+      const a = document.createElement("a");
+      a.href = `https://eldersign.jp/union_facility?cmd=v&t=${t}&cid=${cid}&pg=0&r=t`;
+      a.textContent = text;
+      a.style.cssText = "color:inherit;text-decoration:none;";
+      return a;
     };
 
-    const lines = [];
-    lines.push('<span style="display:block;text-align:center;">研究力</span>');
+    const SCORE_WIDTH = 2; // 2桁固定（1桁は空白）
+
+    const content = document.createElement("div");
+    content.style.cssText = "display:flex;flex-direction:column;gap:8px;";
+
+    const title = document.createElement("div");
+    title.textContent = "研究力";
+    title.style.cssText = "text-align:center;";
+    content.appendChild(title);
+
     GRID.forEach((row, rowIdx) => {
-      const scoreLine = row
-        .map((cell, colIdx) => {
-          const score = calcResearch(grade, level, stats[cell.stat]);
-          const scoreText = `[${String(score).padStart(2, " ")}]`;
-          return padRight(mkLink(scoreText, cell.t), SCORE_WIDTH);
-        })
-        .join("&nbsp;&nbsp;");
+      const rowEl = document.createElement("div");
+      rowEl.style.cssText =
+        "display:grid;grid-template-columns:repeat(3, minmax(0,1fr));" +
+        "gap:10px;text-align:center;";
 
-      const labelLine = row
-        .map((cell, colIdx) => padRight(mkLink(cell.label, cell.t), LABEL_WIDTH))
-        .join("&nbsp;&nbsp;");
+      row.forEach((cell) => {
+        const cellEl = document.createElement("div");
+        cellEl.style.cssText =
+          "display:flex;flex-direction:column;align-items:center;gap:2px;";
 
-      lines.push(scoreLine);
-      lines.push(labelLine);
-      if (rowIdx < GRID.length - 1) lines.push("");
+        if (!cell.stat) {
+          rowEl.appendChild(cellEl);
+          return;
+        }
+
+        const score = calcResearch(grade, level, stats[cell.stat]);
+        const scoreText = `[${String(score).padStart(SCORE_WIDTH, " ")}]`;
+        const scoreEl = mkLinkEl(scoreText, cell.t);
+        scoreEl.style.cssText += "display:inline-block;min-width:2ch;text-align:center;";
+
+        const labelEl = mkLinkEl(cell.label, cell.t);
+        labelEl.style.cssText += "display:inline-block;min-width:2em;text-align:center;";
+
+        cellEl.appendChild(scoreEl);
+        cellEl.appendChild(labelEl);
+        rowEl.appendChild(cellEl);
+      });
+
+      content.appendChild(rowEl);
+      if (rowIdx < GRID.length - 1) {
+        const spacer = document.createElement("div");
+        spacer.style.cssText = "height:6px;";
+        content.appendChild(spacer);
+      }
     });
 
-    renderPanel(lines);
+    renderPanel(content);
   } catch (e) {
     alert("エラー: " + e.message);
   }

@@ -95,6 +95,14 @@ javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-ka
 - ランクマッチ画面で使用可能
 - アルファベットタップでその人の対戦表にジャンプ
 
+### HTML ダウンロード
+```javascript
+javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/html_download.js";document.head.appendChild(s);})();
+```
+- 表示中のページHTMLをそのままダウンロード
+- 戦闘結果共有などに
+- 現状htmlだけダウンロードしているので、本家が消えたらcssが壊れますが、軽い方がいいかなと
+
 # 使い方
 ## PC
 - `javascript:(()=>`から始まる一行のスクリプトをコピー

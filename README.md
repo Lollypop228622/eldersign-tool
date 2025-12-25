@@ -103,6 +103,15 @@ javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-ka
 - 戦闘結果共有などに
 - 現状htmlだけダウンロードしているので、本家が消えたらcssが壊れますが、軽い方がいいかなと
 
+### 戦闘リザルト スキル順抽出
+```javascript
+javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/skill_order.js";document.head.appendChild(s);})();
+```
+- 戦闘結果の各モンスターごとにステータスとスキル設定を抽出
+- 戦闘結果画面で使用可能
+- 陣営ごとにコピー可能
+- [ ] 行動不能時にスキル順が変わったケースへの対応を検討中
+
 ### 長いスクリーンショット
 ```javascript
 javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/screenshot.js";document.head.appendChild(s);})();

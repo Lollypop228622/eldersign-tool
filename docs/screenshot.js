@@ -1,6 +1,5 @@
 (() => {
-  const maxHeight = 3000;
-  const overlapHeight = 32;
+  const thresholdHeight = 1200;
   const scriptId = "html2canvas-lib";
   const loadHtml2Canvas = () =>
     new Promise((resolve, reject) => {
@@ -110,16 +109,42 @@
       String(now.getSeconds()).padStart(2, "0"),
     ].join("");
 
-    let offsetY = 0;
-    let index = 1;
-    while (offsetY < totalHeight) {
-      let remaining = totalHeight - offsetY;
-      let height = Math.min(maxHeight, remaining);
-      if (remaining > maxHeight && remaining <= maxHeight + overlapHeight) {
-        offsetY = totalHeight - maxHeight;
-        remaining = totalHeight - offsetY;
-        height = Math.min(maxHeight, remaining);
+    const turns = Array.from(document.querySelectorAll("section.turn"));
+    const turnStarts = turns
+      .map((section) => {
+        const rect = section.getBoundingClientRect();
+        return rect.top + window.scrollY;
+      })
+      .filter((value) => Number.isFinite(value) && value > 0)
+      .sort((a, b) => a - b);
+    const turnEnds = turns
+      .map((section) => {
+        const rect = section.getBoundingClientRect();
+        return rect.bottom + window.scrollY;
+      })
+      .filter((value) => Number.isFinite(value) && value > 0)
+      .sort((a, b) => a - b);
+    const boundaries = [...turnStarts, ...turnEnds].sort((a, b) => a - b);
+
+    const ranges = [];
+    let startY = 0;
+    boundaries.forEach((end) => {
+      if (end <= startY) return;
+      if (end - startY > thresholdHeight) {
+        ranges.push({ startY, end });
+        startY = end;
       }
+    });
+    if (totalHeight > startY) {
+      ranges.push({ startY, end: totalHeight });
+    }
+    if (!ranges.length) {
+      ranges.push({ startY: 0, end: totalHeight });
+    }
+
+    let index = 1;
+    for (const range of ranges) {
+      const height = Math.max(1, range.end - range.startY);
       // html2canvas の viewport をずらして部分キャプチャする
       const canvas = await window.html2canvas(document.body, {
         useCORS: true,
@@ -129,20 +154,17 @@
         windowWidth: viewportWidth,
         windowHeight: viewportHeight,
         x: 0,
-        y: offsetY,
+        y: range.startY,
         scrollX: 0,
         scrollY: 0,
       });
-      if (!isFullyTransparent(canvas)) {
-        const croppedCanvas = cropTransparent(canvas);
-        const filename = `${title}_${stamp}_part${String(index).padStart(2, "0")}.png`;
-        downloadCanvas(croppedCanvas, filename);
-        index += 1;
+      if (isFullyTransparent(canvas)) {
+        continue;
       }
-      if (remaining <= maxHeight) {
-        break;
-      }
-      offsetY += Math.max(1, height - overlapHeight);
+      const croppedCanvas = cropTransparent(canvas);
+      const filename = `${title}_${stamp}_part${String(index).padStart(2, "0")}.png`;
+      downloadCanvas(croppedCanvas, filename);
+      index += 1;
     }
   };
 

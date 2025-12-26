@@ -119,8 +119,8 @@ javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-ka
 javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-kamikita.github.io/eldersign_js/screenshot.js";document.head.appendChild(s);})();
 ```
 - 長いページを画面外含めて撮影してPNG保存
-- 戦闘結果共有などに
-- ある程度のところでページ分け
+- 戦闘結果画面で使用想定
+- ターンごとにページ分け
 - 外部ライブラリ(html2canvas)を利用
 
 # 使い方

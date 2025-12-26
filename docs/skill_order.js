@@ -41,9 +41,10 @@
       if (!lines.length) return;
       const nameLine = lines[0];
       const name = parseNameLine(nameLine);
+      const level = parseLevel(nameLine);
       const statusLine = lines.length >= 2 ? lines[1].replace(/\s+/g, " ").trim() : "";
       const status = parseInitialStatus(statusLine);
-      monsters.push({ name, status });
+      monsters.push({ name, level, status });
     });
     return monsters;
   }
@@ -51,6 +52,11 @@
   function parseNameLine(line) {
     const nameMatch = line.match(/^(.*)\s+Lv\d+/);
     return normalizeName(nameMatch ? nameMatch[1] : line);
+  }
+
+  function parseLevel(line) {
+    const m = line.match(/Lv\s*(\d+)/i);
+    return m ? parseInt(m[1], 10) : null;
   }
 
   function parseInitialStatus(line) {
@@ -70,6 +76,7 @@
       order.push(m.name);
       map.set(m.name, {
         name: m.name,
+        level: m.level ?? null,
         status: m.status,
         turns: {},
       });
@@ -80,7 +87,7 @@
   function ensureMonster(mapInfo, name) {
     if (mapInfo.map.has(name)) return mapInfo.map.get(name);
     mapInfo.order.push(name);
-    const m = { name, status: "", turns: {} };
+    const m = { name, level: null, status: "", turns: {} };
     mapInfo.map.set(name, m);
     return m;
   }
@@ -144,11 +151,41 @@
     box.id = PANEL_ID;
     box.style.cssText =
       "position:fixed;top:10px;right:10px;z-index:99999;" +
-      "background:rgba(0,0,0,.8);color:#fff;padding:12px;border-radius:8px;" +
-      "font-family:monospace;font-size:13px;max-width:95%;";
+      "background:rgba(0,0,0,.8);color:#fff;padding:24px 12px 12px;" +
+      "border-radius:8px;font-family:monospace;font-size:13px;" +
+      "max-width:calc(100% - 20px);max-height:calc(100% - 20px);" +
+      "overflow:auto;display:inline-flex;" +
+      "flex-direction:column;align-items:flex-end;";
+
+    const closePanel = () => {
+      window.removeEventListener("resize", onResize);
+      box.remove();
+    };
+
+    const close = document.createElement("span");
+    close.textContent = "×";
+    close.setAttribute("role", "button");
+    close.setAttribute("tabindex", "0");
+    close.title = "閉じる";
+    close.style.cssText =
+      "position:absolute;top:0px;right:0px;cursor:pointer;" +
+      "color:#fff;font-size:16px;line-height:16px;padding:6px 10px;";
+    close.onclick = (e) => {
+      e.stopPropagation();
+      closePanel();
+    };
+    close.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.stopPropagation();
+        closePanel();
+      }
+    };
 
     const row = document.createElement("div");
-    row.style.cssText = "display:flex;gap:12px;flex-wrap:wrap;";
+    row.style.cssText =
+      "display:flex;gap:12px;flex-wrap:nowrap;justify-content:flex-end;";
+
+    const panels = [];
 
     const makePanel = (title, text, isLeft) => {
       const panel = document.createElement("div");
@@ -177,7 +214,7 @@
 
       const onCopy = async (e) => {
         e.stopPropagation();
-        await copyText(text);
+        await copyText(wrapCopyText(title, text));
         btn.style.color = "#9fd";
         setTimeout(() => {
           btn.style.color = "#fff";
@@ -198,18 +235,50 @@
       panel.appendChild(head);
       panel.appendChild(pre);
       row.appendChild(panel);
+      panels.push(panel);
 
       if (isLeft) {
-        copyText(text).catch(() => {});
+        copyText(wrapCopyText(title, text)).catch(() => {});
       }
     };
 
     makePanel(leftTitle, leftText, true);
     makePanel(rightTitle, rightText, false);
 
+    const applyLayout = () => {
+      row.style.flexDirection = "row";
+      row.style.alignItems = "stretch";
+      panels.forEach((panel) => {
+        panel.style.minWidth = "280px";
+        panel.style.maxWidth = "46vw";
+        panel.style.width = "";
+      });
+
+      const available = Math.max(0, window.innerWidth - 20);
+      const rowWidth = row.scrollWidth;
+      const boxRect = box.getBoundingClientRect();
+      if (rowWidth > available || boxRect.left < 10) {
+        row.style.flexDirection = "column";
+        row.style.alignItems = "flex-end";
+        panels.forEach((panel) => {
+          panel.style.minWidth = "0";
+          panel.style.maxWidth = "calc(100vw - 20px - 24px)";
+        });
+        const widths = panels.map((panel) => panel.getBoundingClientRect().width);
+        const maxWidth = Math.min(available - 24, Math.max(...widths, 0));
+        panels.forEach((panel) => {
+          panel.style.width = `${Math.ceil(maxWidth)}px`;
+        });
+      }
+    };
+
+    const onResize = () => applyLayout();
+
+    box.appendChild(close);
     box.appendChild(row);
-    box.onclick = () => box.remove();
     document.body.appendChild(box);
+    window.addEventListener("resize", onResize);
+    requestAnimationFrame(applyLayout);
   }
 
   async function copyText(text) {
@@ -227,13 +296,19 @@
     ta.remove();
   }
 
+  function wrapCopyText(title, text) {
+    return "```\n" + title + "\n" + text + "\n```";
+  }
+
   function buildOutputText(mapInfo, maxTurn, presentByTurn) {
     const lines = [];
     mapInfo.order.forEach((name) => {
       const m = mapInfo.map.get(name);
       if (!m) return;
       const status = m.status || "-";
-      lines.push(`${m.name}  ${status}`);
+      const levelText = m.level != null ? `Lv${m.level}` : "";
+      lines.push([m.name, levelText].filter(Boolean).join(" "));
+      lines.push(status);
 
       const p0Skills = m.turns[0] || [];
       lines.push(` P0: ${p0Skills.length ? p0Skills.join(" / ") : "-"}`);

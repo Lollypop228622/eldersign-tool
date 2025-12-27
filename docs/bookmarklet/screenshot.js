@@ -1,5 +1,5 @@
 (() => {
-  const thresholdHeight = 1200;
+  const thresholdHeight = 1000;
   const scriptId = "html2canvas-lib";
   const loadHtml2Canvas = () =>
     new Promise((resolve, reject) => {

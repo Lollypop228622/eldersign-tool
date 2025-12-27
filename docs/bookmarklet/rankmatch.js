@@ -49,17 +49,28 @@
   const matchesByPlayer = {};
   const statusByPlayer = {};
 
+  const appendParam = (href, key, value) => {
+    try {
+      const url = new URL(href, location.href);
+      url.searchParams.set(key, value);
+      return url.toString();
+    } catch (err) {
+      return href;
+    }
+  };
+
   const normalizeStatus = (cell) => {
     const link = cell.querySelector("a");
+    const linkHref = link ? appendParam(link.href, "t", "1") : null;
     const raw = (link ? link.textContent : cell.textContent).trim();
     if (!raw) return null;
-    if (raw === "○") return { label: "勝ち", cls: "win", href: link?.href };
-    if (raw === "×") return { label: "負け", cls: "loss", href: link?.href };
-    if (raw === "△") return { label: "引き分け", cls: "draw", href: link?.href };
+    if (raw === "○") return { label: "勝ち", cls: "win", href: linkHref };
+    if (raw === "×") return { label: "負け", cls: "loss", href: linkHref };
+    if (raw === "△") return { label: "引き分け", cls: "draw", href: linkHref };
     if (raw === "次") return { label: "次", cls: "next", href: null };
     if (raw === "-" || raw === "‐" || raw === "ー")
       return { label: "未対戦", cls: "pending", href: null };
-    return { label: raw, cls: "pending", href: link?.href };
+    return { label: raw, cls: "pending", href: linkHref };
   };
 
   rows.forEach((row) => {

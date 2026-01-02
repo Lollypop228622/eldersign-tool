@@ -1,0 +1,1078 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>PT記録ツール</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=delete"
+    />
+    <link rel="stylesheet" href="../theme.css" />
+    <style>
+      .tool-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+
+      .tool-buttons {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .party-switch {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .party-switch label {
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .party-switch select {
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--md-sys-outline-variant);
+        background: var(--md-sys-surface);
+        color: var(--md-sys-on-surface);
+        font-size: 0.95rem;
+      }
+
+      .status-text {
+        font-size: 0.9rem;
+        color: var(--md-sys-on-surface-variant);
+      }
+
+      .party-grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: repeat(2, minmax(260px, 1fr));
+      }
+
+      .slot-card {
+        gap: 16px;
+      }
+
+      .slot-card:hover {
+        transform: none;
+      }
+
+      .drag-handle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+        border-radius: 0;
+        border: none;
+        background: transparent;
+        color: var(--md-sys-on-surface-variant);
+        font-size: 0.75rem;
+        cursor: grab;
+        user-select: none;
+        line-height: 1;
+        width: 18px;
+        height: 12px;
+      }
+
+      .drag-handle:active {
+        cursor: grabbing;
+      }
+
+      .drag-handle::before {
+        content: "";
+        width: 100%;
+        height: 12px;
+        display: block;
+        background: linear-gradient(
+          to bottom,
+          currentColor 0 2px,
+          transparent 2px 5px,
+          currentColor 5px 7px,
+          transparent 7px 10px,
+          currentColor 10px 12px
+        );
+      }
+
+      .slot-clear {
+        padding: 6px;
+        border-radius: 999px;
+        background: transparent;
+        border: none;
+        color: var(--md-sys-on-surface-variant);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease, color 0.2s ease;
+      }
+
+      .slot-clear .material-symbols-outlined {
+        font-size: 1.1rem;
+        line-height: 1;
+      }
+
+      .slot-clear:hover {
+        background: color-mix(in srgb, var(--md-sys-primary) 18%, transparent);
+        color: var(--md-sys-on-surface);
+      }
+
+      .slot-clear:active {
+        background: color-mix(in srgb, var(--md-sys-primary) 28%, transparent);
+      }
+
+      .toast-action {
+        margin-left: 12px;
+        padding: 6px 10px;
+        border-radius: 0;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font-size: 0.85rem;
+        text-decoration: underline;
+        border: none;
+      }
+
+      .toast-action:hover {
+        text-decoration: underline;
+      }
+
+      .toast {
+        pointer-events: none;
+      }
+
+      .toast.show {
+        pointer-events: auto;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+      }
+
+      .field label {
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .field input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--md-sys-outline-variant);
+        background: var(--md-sys-surface);
+        color: var(--md-sys-on-surface);
+        font-size: 0.95rem;
+      }
+
+      .name-row {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+      }
+
+      .skill-row {
+        position: relative;
+        width: 100%;
+      }
+
+      .skill-row input {
+        padding-right: 44px;
+        width: 100%;
+      }
+
+      .skill-row .drag-handle {
+        position: absolute;
+        right: 4px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1;
+      }
+
+      .image-row {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 96px minmax(0, 1fr);
+        align-items: center;
+      }
+
+      .slot-preview {
+        width: 96px;
+        height: auto;
+        aspect-ratio: 1 / 1;
+        border-radius: 16px;
+        border: 1px solid var(--md-sys-outline-variant);
+        background: color-mix(in srgb, var(--md-sys-surface) 85%, var(--md-sys-primary-container));
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+      }
+
+      .slot-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: none;
+      }
+
+      .slot-preview.has-image img {
+        display: block;
+      }
+
+      .slot-preview.has-image .preview-label {
+        display: none;
+      }
+
+      .preview-label {
+        position: absolute;
+        inset: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 0.75rem;
+        color: var(--md-sys-on-surface-variant);
+        line-height: 1.4;
+        padding: 6px;
+      }
+
+      .image-editor {
+        display: none;
+      }
+
+      .slot-card.is-editing .image-editor {
+        display: grid;
+      }
+
+      .slot-card.is-editing .slot-preview {
+        outline: 2px solid color-mix(in srgb, var(--md-sys-primary) 55%, transparent);
+        outline-offset: 2px;
+      }
+
+      .skills {
+        display: grid;
+        gap: 10px;
+      }
+
+      .skills-label {
+        font-size: 0.9rem;
+        color: var(--md-sys-on-surface-variant);
+      }
+
+      .skill-grid {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: 1fr;
+      }
+
+      .skill-row {
+        display: block;
+      }
+
+      .drag-target {
+        outline: 2px dashed color-mix(in srgb, var(--md-sys-primary) 55%, transparent);
+        outline-offset: 2px;
+      }
+
+      .slot-card {
+        cursor: grab;
+      }
+
+      .slot-card.is-dragging {
+        opacity: 0.7;
+      }
+
+      @media (max-width: 540px) {
+        .image-row {
+          grid-template-columns: 1fr;
+        }
+
+        .slot-preview {
+          width: 100%;
+          height: auto;
+          aspect-ratio: 1 / 1;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .party-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="reveal">
+        <p class="subtitle">Eldersign Toolkit</p>
+        <h1>PT記録ツール</h1>
+        <p class="subtitle">育成計画のメモにどうぞ</p>
+        <div class="nav-links">
+          <a class="button secondary" href="../index.html">ツール集へ戻る</a>
+          <a class="button" href="../bookmarklet/">ブックマークレット案内</a>
+        </div>
+      </header>
+
+      <section class="reveal">
+        <div class="section-title">
+          <h2>使い方</h2>
+          <span>手入力でもOK</span>
+        </div>
+        <div class="note">
+          モンスターカード画面で「PT記録へ送る」ブックマークレットを実行すると、このページにデータが送られます。
+          受け取ったデータは空いている枠に自動で入ります。手入力で編集してもOKです。
+        </div>
+      </section>
+
+      <section class="reveal">
+        <div class="section-title">
+          <h2>PTメモ</h2>
+          <span>1PT=4枠</span>
+        </div>
+        <div class="tool-actions">
+          <div class="party-switch">
+            <label for="party-select">PT切り替え</label>
+            <select id="party-select"></select>
+          </div>
+        <div class="tool-buttons">
+          <button class="button secondary" type="button" id="share-button">共有URLをコピー</button>
+          <button class="button secondary" type="button" id="export-json">JSONエクスポート</button>
+          <button class="button secondary" type="button" id="import-json">JSONインポート</button>
+          <button class="button secondary" type="button" id="add-slot">枠を追加</button>
+          <button class="button secondary" type="button" id="clear-all">このPTを全消去</button>
+        </div>
+          <div class="status-text" id="status-text">保存は自動です</div>
+        </div>
+        <div class="party-grid" id="party-grid"></div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite">
+      <span id="toast-message"></span>
+      <button class="toast-action" type="button" id="toast-undo">元に戻す</button>
+    </div>
+
+    <template id="slot-template">
+      <article class="card slot-card">
+        <div class="field name-row">
+          <input class="slot-name" type="text" placeholder="モンスター名" />
+          <button class="slot-clear" type="button" aria-label="この枠を削除">
+            <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+          </button>
+        </div>
+        <div class="image-row">
+          <div class="slot-preview" role="button" tabindex="0">
+            <img class="slot-image" alt="" />
+            <span class="preview-label">画像をタップでURL編集</span>
+          </div>
+          <div class="field image-editor">
+            <label>画像URL</label>
+            <input class="slot-image-url" type="url" placeholder="https://..." />
+          </div>
+        </div>
+        <div class="skills">
+          <div class="skill-grid">
+            <div class="skill-row">
+              <button class="drag-handle skill-drag" type="button" draggable="true" aria-label="スキルを移動"></button>
+              <input class="slot-skill" type="text" placeholder="スキル1" />
+            </div>
+            <div class="skill-row">
+              <button class="drag-handle skill-drag" type="button" draggable="true" aria-label="スキルを移動"></button>
+              <input class="slot-skill" type="text" placeholder="スキル2" />
+            </div>
+            <div class="skill-row">
+              <button class="drag-handle skill-drag" type="button" draggable="true" aria-label="スキルを移動"></button>
+              <input class="slot-skill" type="text" placeholder="スキル3" />
+            </div>
+            <div class="skill-row">
+              <button class="drag-handle skill-drag" type="button" draggable="true" aria-label="スキルを移動"></button>
+              <input class="slot-skill" type="text" placeholder="スキル4" />
+            </div>
+            <div class="skill-row">
+              <button class="drag-handle skill-drag" type="button" draggable="true" aria-label="スキルを移動"></button>
+              <input class="slot-skill" type="text" placeholder="スキル5" />
+            </div>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <script>
+      (() => {
+        const DEFAULT_SLOT_COUNT = 4;
+        const SKILL_COUNT = 5;
+        const PARTY_COUNT = 4;
+        const STORAGE_KEY = "eldersign_party_record_v2";
+        const LEGACY_KEY = "eldersign_party_record_v1";
+
+        const grid = document.getElementById("party-grid");
+        const template = document.getElementById("slot-template");
+        const clearAllButton = document.getElementById("clear-all");
+        const statusText = document.getElementById("status-text");
+        const partySelect = document.getElementById("party-select");
+        const shareButton = document.getElementById("share-button");
+        const exportJsonButton = document.getElementById("export-json");
+        const importJsonButton = document.getElementById("import-json");
+        const addSlotButton = document.getElementById("add-slot");
+        const toast = document.getElementById("toast");
+        const toastMessage = document.getElementById("toast-message");
+        const toastUndo = document.getElementById("toast-undo");
+
+        const defaultEntry = () => ({
+          name: "",
+          imageUrl: "",
+          skills: Array.from({ length: SKILL_COUNT }, () => ""),
+        });
+
+        const normalizeText = (text) => (text || "").replace(/\s+/g, " ").trim();
+
+        const normalizeEntry = (entry) => {
+          const skills = Array.from({ length: SKILL_COUNT }, (_, skillIndex) =>
+            normalizeText(entry && entry.skills && entry.skills[skillIndex])
+          );
+          return {
+            name: normalizeText(entry && entry.name),
+            imageUrl: normalizeText(entry && entry.imageUrl),
+            skills,
+          };
+        };
+
+        const buildParty = (entries) => {
+          if (Array.isArray(entries) && entries.length > 0) {
+            return entries.map((entry) => normalizeEntry(entry));
+          }
+          return Array.from({ length: DEFAULT_SLOT_COUNT }, () => defaultEntry());
+        };
+
+        const loadStore = () => {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed && typeof parsed === "object") {
+                return {
+                  activeParty: parsed.activeParty || 1,
+                  parties: parsed.parties || {},
+                };
+              }
+            }
+
+            const legacyRaw = localStorage.getItem(LEGACY_KEY);
+            if (legacyRaw) {
+              const legacyParsed = JSON.parse(legacyRaw);
+              if (Array.isArray(legacyParsed)) {
+                return {
+                  activeParty: 1,
+                  parties: { 1: buildParty(legacyParsed) },
+                };
+              }
+            }
+          } catch (error) {
+            return { activeParty: 1, parties: {} };
+          }
+          return { activeParty: 1, parties: {} };
+        };
+
+        const saveStore = (store) => {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+          } catch (error) {
+            // ignore storage errors
+          }
+        };
+
+        const copyText = async (text) => {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            return;
+          }
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "fixed";
+          textarea.style.top = "-9999px";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textarea);
+        };
+
+        const setStatus = (message) => {
+          if (!statusText) return;
+          statusText.textContent = message;
+        };
+
+        const toastState = {
+          timer: null,
+          onUndo: null,
+        };
+
+        const showToast = (message, onUndo) => {
+          if (!toast || !toastMessage || !toastUndo) return;
+          toastMessage.textContent = message;
+          toast.classList.add("show");
+          toastUndo.style.display = onUndo ? "inline-flex" : "none";
+          toastState.onUndo = onUndo || null;
+          clearTimeout(toastState.timer);
+          toastState.timer = setTimeout(() => {
+            toast.classList.remove("show");
+            toastState.onUndo = null;
+          }, 5000);
+        };
+
+        const dragState = {
+          type: null,
+          slotIndex: null,
+          skillIndex: null,
+        };
+
+        const store = loadStore();
+        const ensureParty = (partyId) => {
+          if (!store.parties[partyId]) {
+            store.parties[partyId] = buildParty();
+          }
+          return store.parties[partyId];
+        };
+        const clampParty = (partyId) =>
+          Math.min(PARTY_COUNT, Math.max(1, Number.parseInt(partyId, 10) || 1));
+        let activeParty = clampParty(store.activeParty);
+        ensureParty(activeParty);
+        store.activeParty = activeParty;
+        const slotRefs = [];
+
+        const updatePreview = (ref, entry) => {
+          if (!ref || !ref.preview) return;
+          if (entry.imageUrl) {
+            ref.preview.classList.add("has-image");
+            ref.previewImage.src = entry.imageUrl;
+            ref.previewImage.alt = entry.name ? `${entry.name}の画像` : "モンスター画像";
+          } else {
+            ref.preview.classList.remove("has-image");
+            ref.previewImage.removeAttribute("src");
+            ref.previewImage.alt = "";
+          }
+        };
+
+        const getActiveEntries = () => ensureParty(activeParty);
+
+        const renderSlot = (ref, entry, index) => {
+          if (!ref || !entry) return;
+          ref.nameInput.value = entry.name;
+          ref.imageInput.value = entry.imageUrl;
+          ref.skillInputs.forEach((input, skillIndex) => {
+            input.value = entry.skills[skillIndex] || "";
+          });
+          updatePreview(ref, entry);
+          ref.card.classList.remove("is-editing");
+          ref.card.dataset.index = String(index);
+        };
+
+        const isEntryEmpty = (entry) =>
+          !entry.name && !entry.imageUrl && entry.skills.every((skill) => !skill);
+
+        const resolveSlot = (requestedSlot) => {
+          const entries = getActiveEntries();
+          if (Number.isFinite(requestedSlot) && requestedSlot >= 0) {
+            while (entries.length <= requestedSlot) {
+              entries.push(defaultEntry());
+            }
+            return requestedSlot;
+          }
+          const emptyIndex = entries.findIndex((entry) => isEntryEmpty(entry));
+          return emptyIndex >= 0 ? emptyIndex : entries.length;
+        };
+
+        const readIncoming = () => {
+          const params = new URLSearchParams(window.location.search);
+          if (![...params.keys()].length) return null;
+
+          const name = normalizeText(params.get("name"));
+          const imageUrl = normalizeText(params.get("img"));
+          const skillParam = params.get("skills");
+          let skills = [];
+
+          if (skillParam) {
+            skills = skillParam.split("|").map((skill) => normalizeText(skill));
+          }
+
+          const skillList = params.getAll("skill").map((skill) => normalizeText(skill));
+          if (skillList.length) {
+            skills = skillList;
+          }
+
+          for (let i = 1; i <= SKILL_COUNT; i += 1) {
+            const skillValue = normalizeText(params.get(`skill${i}`));
+            if (skillValue) skills.push(skillValue);
+          }
+
+          skills = skills.filter((skill) => skill).slice(0, SKILL_COUNT);
+
+          if (!name && !imageUrl && skills.length === 0) return null;
+
+          const slotValue = Number.parseInt(params.get("slot"), 10);
+          const requestedSlot = Number.isFinite(slotValue) ? slotValue - 1 : null;
+
+          const partyValue = Number.parseInt(params.get("party"), 10);
+          const requestedParty = Number.isFinite(partyValue) ? clampParty(partyValue) : null;
+
+          return { name, imageUrl, skills, requestedSlot, requestedParty };
+        };
+
+        const applyIncoming = (incoming) => {
+          if (!incoming) return;
+          if (incoming.requestedParty) {
+            setActiveParty(incoming.requestedParty, false);
+          }
+          const slotIndex = resolveSlot(incoming.requestedSlot);
+          if (slotIndex === null) {
+            setStatus("空き枠がありません。手動で入れ替えてください。");
+            return;
+          }
+          const entry = defaultEntry();
+          entry.name = incoming.name;
+          entry.imageUrl = incoming.imageUrl;
+          entry.skills = Array.from({ length: SKILL_COUNT }, (_, index) => incoming.skills[index] || "");
+          const entries = getActiveEntries();
+          entries[slotIndex] = entry;
+          saveStore(store);
+          renderAll();
+          setStatus(`PT${activeParty}に追加しました`);
+          if (history.replaceState) {
+            history.replaceState(null, "", window.location.pathname);
+          }
+        };
+
+        const handleInput = (event) => {
+          const input = event.target;
+          const slotIndex = Number.parseInt(input.dataset.slot, 10);
+          const entries = getActiveEntries();
+          if (!Number.isFinite(slotIndex) || !entries[slotIndex]) return;
+
+          const entry = entries[slotIndex];
+          const value = normalizeText(input.value);
+          if (input.dataset.field === "name") {
+            entry.name = value;
+            const ref = slotRefs[slotIndex];
+            if (ref) updatePreview(ref, entry);
+          } else if (input.dataset.field === "imageUrl") {
+            entry.imageUrl = value;
+            const ref = slotRefs[slotIndex];
+            if (ref) updatePreview(ref, entry);
+          } else if (input.dataset.field === "skill") {
+            const skillIndex = Number.parseInt(input.dataset.skillIndex, 10);
+            if (Number.isFinite(skillIndex)) {
+              entry.skills[skillIndex] = value;
+            }
+          }
+
+          saveStore(store);
+        };
+
+        const clearSlot = (index) => {
+          const entries = getActiveEntries();
+          const removed = entries.splice(index, 1)[0];
+          if (entries.length === 0) {
+            entries.push(defaultEntry());
+          }
+          saveStore(store);
+          renderAll();
+          setStatus(`PT${activeParty}の枠を削除しました`);
+          if (removed) {
+            showToast("枠を削除しました", () => {
+              const restoreEntries = getActiveEntries();
+              const insertIndex = Math.min(index, restoreEntries.length);
+              restoreEntries.splice(insertIndex, 0, removed);
+              saveStore(store);
+              renderAll();
+              setStatus("削除を取り消しました");
+            });
+          }
+        };
+
+        const clearAll = () => {
+          const confirmed = window.confirm("このPTの内容を消去します。よろしいですか？");
+          if (!confirmed) return;
+          const entries = getActiveEntries();
+          entries.length = 0;
+          for (let i = 0; i < DEFAULT_SLOT_COUNT; i += 1) {
+            entries.push(defaultEntry());
+          }
+          saveStore(store);
+          setStatus(`PT${activeParty}を消去しました`);
+          renderAll();
+        };
+
+        const addSlot = () => {
+          const entries = getActiveEntries();
+          entries.push(defaultEntry());
+          saveStore(store);
+          renderAll();
+          setStatus(`PT${activeParty}に枠を追加しました`);
+        };
+
+        const serializeEntry = (entry) => ({
+          name: entry.name || "",
+          imageUrl: entry.imageUrl || "",
+          skills: Array.from({ length: SKILL_COUNT }, (_, index) => entry.skills[index] || ""),
+        });
+
+        const buildSharePayload = () => ({
+          party: activeParty,
+          entries: getActiveEntries().map((entry) => serializeEntry(entry)),
+        });
+
+        const encodeSharePayload = (payload) => {
+          const json = JSON.stringify(payload);
+          const utf8 = encodeURIComponent(json);
+          return btoa(utf8);
+        };
+
+        const decodeSharePayload = (value) => {
+          const decoded = decodeURIComponent(atob(value));
+          return JSON.parse(decoded);
+        };
+
+        const applySharePayload = (payload) => {
+          if (!payload || !Array.isArray(payload.entries)) {
+            throw new Error("共有データの形式が不正です");
+          }
+          const targetParty = activeParty;
+          const confirmed = window.confirm(`表示中のPT${targetParty}に共有データを読み込みます。上書きしますか？`);
+          if (!confirmed) return false;
+          const entries = buildParty(payload.entries);
+          store.parties[targetParty] = entries;
+          if (targetParty !== activeParty) {
+            setActiveParty(targetParty, false);
+          } else {
+            renderAll();
+          }
+          saveStore(store);
+          setStatus(`PT${targetParty}に共有データを読み込みました`);
+          return true;
+        };
+
+        const readShareData = () => {
+          const params = new URLSearchParams(window.location.search);
+          const raw = params.get("share");
+          if (!raw) return null;
+          try {
+            return decodeSharePayload(raw);
+          } catch (error) {
+            setStatus("共有データの読み込みに失敗しました");
+            return null;
+          }
+        };
+
+        const setActiveParty = (partyId, announce = true) => {
+          const nextParty = clampParty(partyId);
+          if (nextParty === activeParty) return;
+          activeParty = nextParty;
+          ensureParty(activeParty);
+          store.activeParty = activeParty;
+          saveStore(store);
+          renderAll();
+          partySelect.value = String(activeParty);
+          if (announce) setStatus(`PT${activeParty}に切り替えました`);
+        };
+
+        const openImageEditor = (index) => {
+          const ref = slotRefs[index];
+          if (!ref) return;
+          ref.card.classList.add("is-editing");
+          ref.imageInput.focus();
+          ref.imageInput.select();
+        };
+
+        const closeImageEditor = (index) => {
+          const ref = slotRefs[index];
+          if (!ref) return;
+          ref.card.classList.remove("is-editing");
+        };
+
+        const swapSlots = (fromIndex, toIndex) => {
+          if (fromIndex === toIndex) return;
+          const entries = getActiveEntries();
+          const temp = entries[fromIndex];
+          entries[fromIndex] = entries[toIndex];
+          entries[toIndex] = temp;
+          saveStore(store);
+          renderAll();
+          setStatus(`PT${activeParty}の枠を入れ替えました`);
+        };
+
+        const swapSkills = (slotIndex, fromIndex, toIndex) => {
+          if (fromIndex === toIndex) return;
+          const entries = getActiveEntries();
+          const entry = entries[slotIndex];
+          if (!entry) return;
+          const temp = entry.skills[fromIndex];
+          entry.skills[fromIndex] = entry.skills[toIndex];
+          entry.skills[toIndex] = temp;
+          saveStore(store);
+          const ref = slotRefs[slotIndex];
+          if (ref) renderSlot(ref, entry, slotIndex);
+          setStatus(`PT${activeParty}の枠${slotIndex + 1}でスキルを入れ替えました`);
+        };
+
+        const clearDragTarget = () => {
+          document.querySelectorAll(".drag-target").forEach((el) => {
+            el.classList.remove("drag-target");
+          });
+        };
+
+        const onDragEnd = () => {
+          dragState.type = null;
+          dragState.slotIndex = null;
+          dragState.skillIndex = null;
+          clearDragTarget();
+        };
+
+        const blockDrag = (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        };
+
+        const buildSlot = (entry, index) => {
+          const clone = template.content.cloneNode(true);
+          const card = clone.querySelector(".slot-card");
+          const clearButton = clone.querySelector(".slot-clear");
+          const nameInput = clone.querySelector(".slot-name");
+          const imageInput = clone.querySelector(".slot-image-url");
+          const preview = clone.querySelector(".slot-preview");
+          const previewImage = clone.querySelector(".slot-image");
+          const skillRows = [...clone.querySelectorAll(".skill-row")];
+          const skillInputs = [...clone.querySelectorAll(".slot-skill")];
+          const skillDrags = [...clone.querySelectorAll(".skill-drag")];
+
+          nameInput.dataset.slot = String(index);
+          nameInput.dataset.field = "name";
+          imageInput.dataset.slot = String(index);
+          imageInput.dataset.field = "imageUrl";
+          skillInputs.forEach((input, skillIndex) => {
+            input.dataset.slot = String(index);
+            input.dataset.field = "skill";
+            input.dataset.skillIndex = String(skillIndex);
+          });
+
+          nameInput.addEventListener("input", handleInput);
+          nameInput.addEventListener("dragstart", blockDrag);
+          imageInput.addEventListener("input", handleInput);
+          imageInput.addEventListener("dragstart", blockDrag);
+          imageInput.addEventListener("blur", () => closeImageEditor(index));
+          imageInput.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              closeImageEditor(index);
+            }
+          });
+          skillInputs.forEach((input) => {
+            input.addEventListener("input", handleInput);
+            input.addEventListener("dragstart", blockDrag);
+          });
+          clearButton.addEventListener("click", () => clearSlot(index));
+          preview.addEventListener("click", () => openImageEditor(index));
+          preview.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              openImageEditor(index);
+            }
+          });
+
+          card.setAttribute("draggable", "false");
+          const allowCardDrag = (event) => {
+            if (event.target.closest("input, textarea, select, button, label, .field")) {
+              card.setAttribute("draggable", "false");
+              return;
+            }
+            card.setAttribute("draggable", "true");
+          };
+          const disableCardDrag = () => {
+            card.setAttribute("draggable", "false");
+          };
+          card.addEventListener("mousedown", allowCardDrag);
+          card.addEventListener("mouseup", disableCardDrag);
+          card.addEventListener("mouseleave", disableCardDrag);
+          card.addEventListener("dragstart", (event) => {
+            if (event.target.closest("input, textarea, select, button, label, .field")) {
+              event.preventDefault();
+              return;
+            }
+            dragState.type = "slot";
+            dragState.slotIndex = index;
+            dragState.skillIndex = null;
+            card.classList.add("is-dragging");
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", "slot");
+          });
+          card.addEventListener("dragend", () => {
+            card.classList.remove("is-dragging");
+            onDragEnd();
+            disableCardDrag();
+          });
+          card.addEventListener("dragover", (event) => {
+            if (dragState.type !== "slot") return;
+            event.preventDefault();
+            card.classList.add("drag-target");
+          });
+          card.addEventListener("dragleave", () => {
+            card.classList.remove("drag-target");
+          });
+          card.addEventListener("drop", (event) => {
+            if (dragState.type !== "slot") return;
+            event.preventDefault();
+            card.classList.remove("drag-target");
+            if (dragState.slotIndex === null) return;
+            swapSlots(dragState.slotIndex, index);
+            onDragEnd();
+          });
+
+          skillRows.forEach((row, skillIndex) => {
+            row.dataset.slot = String(index);
+            row.dataset.skillIndex = String(skillIndex);
+            const handle = skillDrags[skillIndex];
+            handle.dataset.slot = String(index);
+            handle.dataset.skillIndex = String(skillIndex);
+            handle.addEventListener("dragstart", (event) => {
+              event.stopPropagation();
+              disableCardDrag();
+              dragState.type = "skill";
+              dragState.slotIndex = index;
+              dragState.skillIndex = skillIndex;
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", "skill");
+            });
+            handle.addEventListener("dragend", onDragEnd);
+            row.addEventListener("dragover", (event) => {
+              if (dragState.type !== "skill") return;
+              if (dragState.slotIndex !== index) return;
+              event.preventDefault();
+              row.classList.add("drag-target");
+            });
+            row.addEventListener("dragleave", () => {
+              row.classList.remove("drag-target");
+            });
+            row.addEventListener("drop", (event) => {
+              if (dragState.type !== "skill") return;
+              if (dragState.slotIndex !== index) return;
+              event.preventDefault();
+              row.classList.remove("drag-target");
+              if (dragState.skillIndex === null) return;
+              swapSkills(index, dragState.skillIndex, skillIndex);
+              onDragEnd();
+            });
+          });
+
+          const ref = {
+            card,
+            nameInput,
+            imageInput,
+            preview,
+            previewImage,
+            skillInputs,
+          };
+          slotRefs.push(ref);
+          renderSlot(ref, entry, index);
+          grid.appendChild(clone);
+        };
+
+        const renderAll = () => {
+          grid.innerHTML = "";
+          slotRefs.length = 0;
+          const entries = getActiveEntries();
+          entries.forEach((entry, index) => {
+            buildSlot(entry, index);
+          });
+        };
+
+        clearAllButton.addEventListener("click", clearAll);
+        if (addSlotButton) {
+          addSlotButton.addEventListener("click", addSlot);
+        }
+        if (toastUndo) {
+          toastUndo.addEventListener("click", () => {
+            if (!toastState.onUndo) return;
+            const handler = toastState.onUndo;
+            toastState.onUndo = null;
+            toast.classList.remove("show");
+            handler();
+          });
+        }
+        if (shareButton) {
+          shareButton.addEventListener("click", async () => {
+            try {
+              const payload = buildSharePayload();
+              const encoded = encodeSharePayload(payload);
+              const baseUrl = `${window.location.origin}${window.location.pathname}`;
+              const shareUrl = `${baseUrl}?share=${encoded}`;
+              await copyText(shareUrl);
+              setStatus("共有URLをコピーしました");
+            } catch (error) {
+              setStatus("共有URLの作成に失敗しました");
+            }
+          });
+        }
+
+        if (exportJsonButton) {
+          exportJsonButton.addEventListener("click", async () => {
+            try {
+              const payload = buildSharePayload();
+              const json = JSON.stringify(payload);
+              await copyText(json);
+              setStatus("JSONをコピーしました");
+            } catch (error) {
+              setStatus("JSONのコピーに失敗しました");
+            }
+          });
+        }
+
+        if (importJsonButton) {
+          importJsonButton.addEventListener("click", () => {
+            const text = window.prompt("共有JSONを貼り付けてください");
+            if (!text) return;
+            try {
+              const payload = JSON.parse(text);
+              applySharePayload(payload);
+            } catch (error) {
+              setStatus("JSONの読み込みに失敗しました");
+            }
+          });
+        }
+
+        if (partySelect) {
+          for (let i = 1; i <= PARTY_COUNT; i += 1) {
+            const option = document.createElement("option");
+            option.value = String(i);
+            option.textContent = `PT ${i}`;
+            partySelect.appendChild(option);
+          }
+          partySelect.value = String(activeParty);
+          partySelect.addEventListener("change", (event) => {
+            setActiveParty(event.target.value);
+          });
+        }
+
+        renderAll();
+        const shareData = readShareData();
+        if (shareData && applySharePayload(shareData)) {
+          if (history.replaceState) {
+            history.replaceState(null, "", window.location.pathname);
+          }
+        } else {
+          applyIncoming(readIncoming());
+        }
+      })();
+    </script>
+  </body>
+</html>

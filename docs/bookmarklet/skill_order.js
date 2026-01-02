@@ -149,8 +149,9 @@
 
     const box = document.createElement("div");
     box.id = PANEL_ID;
+    const boxTop = 10;
     box.style.cssText =
-      "position:fixed;top:10px;right:10px;z-index:99999;" +
+      `position:fixed;top:${boxTop}px;right:10px;z-index:99999;` +
       "background:rgba(0,0,0,.8);color:#fff;padding:24px 12px 12px;" +
       "border-radius:8px;font-family:monospace;font-size:13px;" +
       "max-width:calc(100% - 20px);max-height:calc(100% - 20px);" +
@@ -159,17 +160,22 @@
 
     const closePanel = () => {
       window.removeEventListener("resize", onResize);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("resize", onResize);
+      }
       box.remove();
     };
 
     const close = document.createElement("span");
-    close.textContent = "×";
     close.setAttribute("role", "button");
     close.setAttribute("tabindex", "0");
     close.title = "閉じる";
     close.style.cssText =
       "position:absolute;top:0px;right:0px;cursor:pointer;" +
       "color:#fff;font-size:16px;line-height:16px;padding:6px 10px;";
+    close.innerHTML =
+      '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" ' +
+      'fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
     close.onclick = (e) => {
       e.stopPropagation();
       closePanel();
@@ -187,14 +193,40 @@
 
     const panels = [];
 
+    const setExpanded = (item, expanded) => {
+      item.panel.dataset.expanded = expanded ? "1" : "0";
+      item.toggle.title = expanded ? "閉じる" : "開く";
+      item.toggle.style.transform = expanded ? "rotate(90deg)" : "rotate(0deg)";
+      item.body.style.opacity = expanded ? "1" : "0";
+      item.body.style.overflow = expanded ? "auto" : "hidden";
+      const maxHeight = item.body.dataset.maxHeight || "0";
+      item.body.style.maxHeight = expanded ? maxHeight : "0px";
+    };
+
     const makePanel = (title, text, isLeft) => {
       const panel = document.createElement("div");
       panel.style.cssText =
         "min-width:280px;max-width:46vw;border:1px solid rgba(255,255,255,.2);" +
-        "border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:6px;";
+        "border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:0;";
 
       const head = document.createElement("div");
-      head.style.cssText = "display:flex;justify-content:space-between;gap:8px;";
+      head.style.cssText =
+        "display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;";
+
+      const leftWrap = document.createElement("div");
+      leftWrap.style.cssText = "display:flex;align-items:center;gap:6px;";
+
+      const toggle = document.createElement("span");
+      toggle.setAttribute("role", "button");
+      toggle.setAttribute("tabindex", "0");
+      toggle.title = "開く";
+      toggle.style.cssText =
+        "display:none;cursor:pointer;user-select:none;line-height:1;" +
+        "width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;" +
+        "transition:transform 0.18s ease;";
+      toggle.innerHTML =
+        '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" ' +
+        'fill="currentColor"><path d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>';
 
       const label = document.createElement("div");
       label.textContent = title;
@@ -225,21 +257,47 @@
         if (e.key === "Enter" || e.key === " ") onCopy(e);
       };
 
-      head.appendChild(label);
+      leftWrap.appendChild(toggle);
+      leftWrap.appendChild(label);
+      head.appendChild(leftWrap);
       head.appendChild(btn);
 
+      const body = document.createElement("div");
+      body.style.cssText =
+        "overflow:auto;max-height:70vh;min-height:0;-webkit-overflow-scrolling:touch;" +
+        "transition:max-height 0.25s ease, opacity 0.2s ease;";
+
       const pre = document.createElement("pre");
-      pre.style.cssText = "margin:0;white-space:pre;overflow:auto;max-height:70vh;";
+      pre.style.cssText = "margin:0;white-space:pre;color:#fff;";
       pre.textContent = text;
 
       panel.appendChild(head);
-      panel.appendChild(pre);
+      body.appendChild(pre);
+      panel.appendChild(body);
       row.appendChild(panel);
-      panels.push(panel);
+      const item = { panel, head, body, toggle };
+      panels.push(item);
 
-      if (isLeft) {
-        copyText(wrapCopyText(title, text)).catch(() => {});
-      }
+      const togglePanel = (e) => {
+        e.stopPropagation();
+        const next = panel.dataset.expanded !== "1";
+        setExpanded(item, next);
+      };
+      toggle.onclick = togglePanel;
+      toggle.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") togglePanel(e);
+      };
+      head.onclick = (e) => {
+        if (btn.contains(e.target)) return;
+        togglePanel(e);
+      };
+      head.onkeydown = (e) => {
+        if (btn.contains(e.target)) return;
+        if (e.key === "Enter" || e.key === " ") togglePanel(e);
+      };
+      head.setAttribute("role", "button");
+      head.setAttribute("tabindex", "0");
+
     };
 
     makePanel(leftTitle, leftText, true);
@@ -248,7 +306,8 @@
     const applyLayout = () => {
       row.style.flexDirection = "row";
       row.style.alignItems = "stretch";
-      panels.forEach((panel) => {
+      panels.forEach((item) => {
+        const panel = item.panel;
         panel.style.minWidth = "280px";
         panel.style.maxWidth = "46vw";
         panel.style.width = "";
@@ -260,16 +319,45 @@
       if (rowWidth > available || boxRect.left < 10) {
         row.style.flexDirection = "column";
         row.style.alignItems = "flex-end";
-        panels.forEach((panel) => {
+        panels.forEach((item) => {
+          const panel = item.panel;
           panel.style.minWidth = "0";
           panel.style.maxWidth = "calc(100vw - 20px - 24px)";
         });
-        const widths = panels.map((panel) => panel.getBoundingClientRect().width);
+        const widths = panels.map((item) => item.panel.getBoundingClientRect().width);
         const maxWidth = Math.min(available - 24, Math.max(...widths, 0));
-        panels.forEach((panel) => {
-          panel.style.width = `${Math.ceil(maxWidth)}px`;
+        panels.forEach((item) => {
+          item.panel.style.width = `${Math.ceil(maxWidth)}px`;
         });
       }
+
+      const viewport = window.visualViewport;
+      const viewportHeight = viewport ? viewport.height : window.innerHeight;
+      const fallbackBottom = !viewport && narrow ? 64 : 0;
+      const topOffset = Number.parseInt(box.style.top, 10) || boxTop;
+      const maxHeight = Math.max(0, viewportHeight - topOffset - 32 - fallbackBottom);
+      box.style.maxHeight = `${Math.floor(maxHeight)}px`;
+      const narrow = window.innerWidth < 520;
+      const needsAccordion = row.scrollHeight + 24 > maxHeight;
+      const useAccordion = narrow || needsAccordion;
+      panels.forEach((item) => {
+        if (!useAccordion) {
+          item.toggle.style.display = "none";
+          item.body.dataset.maxHeight = "70vh";
+          setExpanded(item, true);
+          item.panel.dataset.accordion = "0";
+          return;
+        }
+        item.toggle.style.display = "inline-block";
+        if (item.panel.dataset.accordion !== "1") setExpanded(item, true);
+        item.panel.dataset.accordion = "1";
+        const headHeight = item.head.getBoundingClientRect().height;
+        const maxBodyHeight = Math.max(80, maxHeight - headHeight - 60);
+        item.body.dataset.maxHeight = `${Math.floor(maxBodyHeight)}px`;
+        if (item.panel.dataset.expanded === "1") {
+          item.body.style.maxHeight = item.body.dataset.maxHeight;
+        }
+      });
     };
 
     const onResize = () => applyLayout();
@@ -278,6 +366,9 @@
     box.appendChild(row);
     document.body.appendChild(box);
     window.addEventListener("resize", onResize);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", onResize);
+    }
     requestAnimationFrame(applyLayout);
   }
 

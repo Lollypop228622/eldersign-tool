@@ -129,22 +129,27 @@
   };
 
   const getItemFlags = (li) => {
-    const icon = li.querySelector("img.i");
-    if (!icon) return { isOnSale: false, isProtected: false };
-    const src = icon.getAttribute("src") || "";
+    const icons = Array.from(li.querySelectorAll("img.i"));
+    if (!icons.length) return { isOnSale: false, isProtected: false, isForming: false };
+    const srcList = icons.map((icon) => icon.getAttribute("src") || "");
     return {
-      isOnSale: src.includes("card_b"),
-      isProtected: src.includes("card_l"),
+      isOnSale: srcList.some((src) => src.includes("card_b")),
+      isProtected: srcList.some((src) => src.includes("card_l")),
+      isForming: srcList.some((src) => src.includes("card_c")),
     };
   };
 
   const setAllSelections = (checked, status, options = {}) => {
-    const { skipOnSale = false, skipProtected = false } = options;
+    const { skipOnSale = false, skipProtected = false, skipForming = false } = options;
     const items = document.querySelectorAll("li.es-book-item");
     items.forEach((li) => {
-      if (checked && (skipOnSale || skipProtected)) {
-        const { isOnSale, isProtected } = getItemFlags(li);
-        if ((skipOnSale && isOnSale) || (skipProtected && isProtected)) return;
+      if (checked && (skipOnSale || skipProtected || skipForming)) {
+        const { isOnSale, isProtected, isForming } = getItemFlags(li);
+        if (
+          (skipOnSale && isOnSale) ||
+          (skipProtected && isProtected) ||
+          (skipForming && isForming)
+        ) return;
       }
       const checkbox = li.querySelector("input.es-book-check");
       if (!checkbox) return;
@@ -235,7 +240,7 @@
     bookButton.addEventListener("click", () => runMove("a2", status));
     selectAllButton.addEventListener("click", () => {
       if (nextSelectAll) {
-        setAllSelections(true, status, { skipOnSale: true });
+        setAllSelections(true, status, { skipOnSale: true, skipForming: true });
         selectAllButton.textContent = "全削除";
       } else {
         setAllSelections(false, status);
@@ -244,7 +249,11 @@
       nextSelectAll = !nextSelectAll;
     });
     selectUnprotectedButton.addEventListener("click", () => {
-      setAllSelections(true, status, { skipOnSale: true, skipProtected: true });
+      setAllSelections(true, status, {
+        skipOnSale: true,
+        skipProtected: true,
+        skipForming: true,
+      });
     });
   };
 

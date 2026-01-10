@@ -1,5 +1,20 @@
 (() => {
   const RARITY_MAP = { b: 1, s: 2, g: 4, p: 8 };
+  const STYLE_ID = "__es_exp_style";
+
+  const ensureStyle = () => {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.textContent = `
+.es-exp-line{
+  margin:2px 0 0 78px;
+}
+`.trim();
+    document.head.appendChild(style);
+  };
+
+  ensureStyle();
 
   function getRarity(li) {
     const img = li.querySelector('img[src*="https://eldersign.jp/img/mi/"]');
@@ -45,10 +60,12 @@
     let effP = [...li.querySelectorAll('p')].find(p => /^効率\s*\(1Any\)/.test(p.textContent));
 
     if (!expP) expP = document.createElement('p');
+    expP.classList.add("es-exp-line");
     expP.textContent = `経験値: 異種族${diff} / 同種族${same}`;
 
     if (price != null) {
       if (!effP) effP = document.createElement('p');
+      effP.classList.add("es-exp-line");
       effP.textContent =
         `効率(1Any): 異種族${formatRate(diff / price)} / 同種族${formatRate(same / price)}`;
 

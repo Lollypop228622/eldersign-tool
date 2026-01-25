@@ -1,198 +1,197 @@
 <!doctype html>
 <html lang="ja">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="light dark" />
-    <title>グレード計算ツール</title>
-    <link rel="stylesheet" href="../theme.css" />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=share"
-    />
-    <style>
-      .tool-grid {
-        display: grid;
-        gap: 18px;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      }
 
-      .form-grid {
-        display: grid;
-        gap: 12px;
-      }
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>グレード計算ツール</title>
+  <link rel="stylesheet" href="../theme.css" />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=share" />
+  <style>
+    .tool-grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
 
-      .form-grid label {
-        font-weight: 600;
-      }
+    .form-grid {
+      display: grid;
+      gap: 12px;
+    }
 
-      .input-row {
-        display: grid;
-        gap: 8px;
-      }
+    .form-grid label {
+      font-weight: 600;
+    }
 
-      .input-row input,
-      .input-row select {
-        width: 100%;
-        padding: 10px 12px;
-        border-radius: 12px;
-        border: 1px solid var(--md-sys-outline-variant);
-        background: var(--md-sys-surface);
-        color: var(--md-sys-on-surface);
-        font-size: 0.95rem;
-      }
+    .input-row {
+      display: grid;
+      gap: 8px;
+    }
 
-      .share-row {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 10px;
-        align-items: center;
-      }
+    .input-row input,
+    .input-row select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--md-sys-outline-variant);
+      background: var(--md-sys-surface);
+      color: var(--md-sys-on-surface);
+      font-size: 0.95rem;
+    }
 
-      .section-actions {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-      }
+    .share-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
 
-      .section-actions .icon-button {
-        width: 44px;
-        height: 44px;
-      }
+    .section-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-      .icon-button {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        border: 1px solid transparent;
-        background: transparent;
-        color: var(--md-sys-primary);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
+    .section-actions .icon-button {
+      width: 44px;
+      height: 44px;
+    }
 
-      .icon-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 18px var(--md-sys-shadow);
-      }
+    .icon-button {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--md-sys-primary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
 
-      .material-symbols-outlined {
-        font-family: "Material Symbols Outlined";
-        font-variation-settings: "FILL" 0, "wght" 500, "GRAD" 0, "opsz" 20;
-        font-size: 20px;
-        line-height: 1;
-        display: inline-block;
-      }
+    .icon-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 18px var(--md-sys-shadow);
+    }
 
-      .stat-table {
-        display: grid;
-        gap: 10px;
-      }
+    .material-symbols-outlined {
+      font-family: "Material Symbols Outlined";
+      font-variation-settings: "FILL" 0, "wght" 500, "GRAD" 0, "opsz" 20;
+      font-size: 20px;
+      line-height: 1;
+      display: inline-block;
+    }
 
-      .stat-row {
-        display: grid;
-        grid-template-columns: minmax(40px, 70px) minmax(80px, 1fr) minmax(80px, 1fr) minmax(40px, 70px);
-        gap: 10px;
-        align-items: center;
-      }
+    .stat-table {
+      display: grid;
+      gap: 10px;
+    }
 
-      .stat-head {
-        font-size: 0.85rem;
-        color: var(--md-sys-on-surface-variant);
-      }
+    .stat-row {
+      display: grid;
+      grid-template-columns: minmax(40px, 70px) minmax(80px, 1fr) minmax(80px, 1fr) minmax(40px, 70px);
+      gap: 10px;
+      align-items: center;
+    }
 
-      .stat-row input {
-        width: 100%;
-        padding: 10px 12px;
-        border-radius: 12px;
-        border: 1px solid var(--md-sys-outline-variant);
-        background: var(--md-sys-surface);
-        color: var(--md-sys-on-surface);
-        font-size: 0.95rem;
-      }
+    .stat-head {
+      font-size: 0.85rem;
+      color: var(--md-sys-on-surface-variant);
+    }
 
-      .stat-pct {
-        font-size: 0.9rem;
-        color: var(--md-sys-on-surface-variant);
-        text-align: right;
-      }
+    .stat-row input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--md-sys-outline-variant);
+      background: var(--md-sys-surface);
+      color: var(--md-sys-on-surface);
+      font-size: 0.95rem;
+    }
 
-      .list li.is-clickable {
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
+    .stat-pct {
+      font-size: 0.9rem;
+      color: var(--md-sys-on-surface-variant);
+      text-align: right;
+    }
 
-      .list li.is-clickable:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 18px var(--md-sys-shadow);
-      }
+    .list li.is-clickable {
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
 
-      .card.no-hover:hover {
-        transform: none;
-        box-shadow: 0 10px 25px var(--md-sys-shadow);
-      }
+    .list li.is-clickable:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 18px var(--md-sys-shadow);
+    }
 
-      .result-card {
-        display: grid;
-        gap: 10px;
-      }
+    .card.no-hover:hover {
+      transform: none;
+      box-shadow: 0 10px 25px var(--md-sys-shadow);
+    }
 
-      .result-label {
-        color: var(--md-sys-on-surface-variant);
-        font-size: 0.9rem;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
-      }
+    .result-card {
+      display: grid;
+      gap: 10px;
+    }
 
-      .result-value {
-        font-size: 1.8rem;
-        font-weight: 700;
-      }
+    .result-label {
+      color: var(--md-sys-on-surface-variant);
+      font-size: 0.9rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
 
-      .hint {
-        margin: 0;
-        font-size: 0.9rem;
-        color: var(--md-sys-on-surface-variant);
-      }
+    .result-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
 
-    </style>
-  </head>
-  <body>
-    <main>
-      <header class="reveal">
-        <p class="subtitle">Eldersign Toolkit</p>
-        <h1>グレード計算ツール</h1>
-        <p class="subtitle">基礎ステータスと個体値から評価値とグレードを算出。</p>
-        <div class="nav-links">
-          <a class="button secondary" href="../index.html">ツール集へ戻る</a>
-        </div>
-      </header>
+    .hint {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--md-sys-on-surface-variant);
+    }
+  </style>
+</head>
 
-      <section class="reveal">
-        <div class="section-title">
-          <h2>入力</h2>
-        </div>
-        <div class="tool-grid">
-          <article class="card no-hover">
-            <h3>モンスター情報</h3>
-            <div class="form-grid">
-              <div class="input-row">
-                <label for="monster-name">モンスター名</label>
-                <input id="monster-name" type="text" placeholder="例: ショゴス" />
-              </div>
-              <div class="input-row">
-                <label for="monster-kind">原種/亜種</label>
-                <input id="monster-kind" type="text" placeholder="例: 原種 / 亜種1 / 亜種2" />
-              </div>
+<body>
+  <main>
+    <header class="reveal">
+      <p class="subtitle">Eldersign Toolkit</p>
+      <h1>グレード計算ツール</h1>
+      <p class="subtitle">基礎ステータスと個体値から評価値とグレードを算出。</p>
+      <div class="nav-links">
+        <a class="button secondary" href="../index.html">ツール集へ戻る</a>
+      </div>
+    </header>
+
+    <section class="reveal">
+      <div class="section-title">
+        <h2>入力</h2>
+      </div>
+      <div class="tool-grid">
+        <article class="card no-hover">
+          <h3>モンスター情報</h3>
+          <div class="form-grid">
+            <div class="input-row">
+              <label for="monster-name">モンスター名</label>
+              <input id="monster-name" type="text" placeholder="例: ショゴス" />
             </div>
-         </article>
+            <div class="input-row">
+              <label for="monster-kind">原種/亜種</label>
+              <input id="monster-kind" type="text" placeholder="例: 原種 / 亜種1 / 亜種2" />
+            </div>
+          </div>
+        </article>
 
-          <article class="card no-hover">
-            <h3>評価結果</h3>
-            <div class="result-card">
+        <article class="card no-hover">
+          <h3>評価結果</h3>
+          <div class="result-card">
             <div class="input-row">
               <div class="result-label">共有用URL</div>
               <div class="share-row">
@@ -203,406 +202,406 @@
               </div>
             </div>
             <p class="hint" id="share-status">現在の入力内容をURLに反映して共有できます。</p>
-              <div>
-                <div class="result-label">評価値</div>
-                <div class="result-value" id="eval-value">-</div>
-              </div>
-              <div>
-                <div class="result-label">現在グレード</div>
-                <div class="result-value" id="grade-value">-</div>
-              </div>
+            <div>
+              <div class="result-label">評価値</div>
+              <div class="result-value" id="eval-value">-</div>
             </div>
-           </article>
-        </div>
-      </section>
-
-      <section class="reveal">
-        <div class="section-title">
-          <h2>ステータス入力</h2>
-        </div>
-        <article class="card no-hover">
-          <div class="stat-table">
-            <div class="stat-row stat-head">
-              <div>項目</div>
-              <div>基礎ステータス</div>
-              <div>個体値(+) </div>
-              <div>割合</div>
-            </div>
-            <div class="stat-row">
-              <div>HP</div>
-              <input id="base-hp" type="number" min="1" step="1" placeholder="例: 3000" />
-              <input id="bonus-hp" type="number" step="1" placeholder="例: 800" />
-              <div class="stat-pct" id="pct-hp">-</div>
-            </div>
-            <div class="stat-row">
-              <div>攻撃</div>
-              <input id="base-atk" type="number" min="1" step="1" placeholder="例: 500" />
-              <input id="bonus-atk" type="number" step="1" placeholder="例: 30" />
-              <div class="stat-pct" id="pct-atk">-</div>
-            </div>
-            <div class="stat-row">
-              <div>魔力</div>
-              <input id="base-mag" type="number" min="1" step="1" placeholder="例: 500" />
-              <input id="bonus-mag" type="number" step="1" placeholder="例: 200" />
-              <div class="stat-pct" id="pct-mag">-</div>
-            </div>
-            <div class="stat-row">
-              <div>防御</div>
-              <input id="base-def" type="number" min="1" step="1" placeholder="例: 1000" />
-              <input id="bonus-def" type="number" step="1" placeholder="例: 250" />
-              <div class="stat-pct" id="pct-def">-</div>
-            </div>
-            <div class="stat-row">
-              <div>命中</div>
-              <input id="base-hit" type="number" min="1" step="1" placeholder="例: 700" />
-              <input id="bonus-hit" type="number" step="1" placeholder="例: 40" />
-              <div class="stat-pct" id="pct-hit">-</div>
-            </div>
-            <div class="stat-row">
-              <div>敏捷</div>
-              <input id="base-agi" type="number" min="1" step="1" placeholder="例: 100" />
-              <input id="bonus-agi" type="number" step="1" placeholder="例: 0" />
-              <div class="stat-pct" id="pct-agi">-</div>
+            <div>
+              <div class="result-label">現在グレード</div>
+              <div class="result-value" id="grade-value">-</div>
             </div>
           </div>
-          <p class="hint">入力内容は上の共有ボタンからURL化できます。</p>
         </article>
-      </section>
+      </div>
+    </section>
 
-      <section class="reveal">
-        <div class="section-title">
-          <h2>必要個体値</h2>
-          <span>1ステータスだけ上げる場合</span>
+    <section class="reveal">
+      <div class="section-title">
+        <h2>ステータス入力</h2>
+      </div>
+      <article class="card no-hover">
+        <div class="stat-table">
+          <div class="stat-row stat-head">
+            <div>項目</div>
+            <div>基礎ステータス</div>
+            <div>個体値(+) </div>
+            <div>割合</div>
+          </div>
+          <div class="stat-row">
+            <div>HP</div>
+            <input id="base-hp" type="number" min="1" step="1" placeholder="例: 3000" />
+            <input id="bonus-hp" type="number" step="1" placeholder="例: 800" />
+            <div class="stat-pct" id="pct-hp">-</div>
+          </div>
+          <div class="stat-row">
+            <div>攻撃</div>
+            <input id="base-atk" type="number" min="1" step="1" placeholder="例: 500" />
+            <input id="bonus-atk" type="number" step="1" placeholder="例: 30" />
+            <div class="stat-pct" id="pct-atk">-</div>
+          </div>
+          <div class="stat-row">
+            <div>魔力</div>
+            <input id="base-mag" type="number" min="1" step="1" placeholder="例: 500" />
+            <input id="bonus-mag" type="number" step="1" placeholder="例: 200" />
+            <div class="stat-pct" id="pct-mag">-</div>
+          </div>
+          <div class="stat-row">
+            <div>防御</div>
+            <input id="base-def" type="number" min="1" step="1" placeholder="例: 1000" />
+            <input id="bonus-def" type="number" step="1" placeholder="例: 250" />
+            <div class="stat-pct" id="pct-def">-</div>
+          </div>
+          <div class="stat-row">
+            <div>命中</div>
+            <input id="base-hit" type="number" min="1" step="1" placeholder="例: 700" />
+            <input id="bonus-hit" type="number" step="1" placeholder="例: 40" />
+            <div class="stat-pct" id="pct-hit">-</div>
+          </div>
+          <div class="stat-row">
+            <div>敏捷</div>
+            <input id="base-agi" type="number" min="1" step="1" placeholder="例: 100" />
+            <input id="bonus-agi" type="number" step="1" placeholder="例: 0" />
+            <div class="stat-pct" id="pct-agi">-</div>
+          </div>
         </div>
-        <div class="tool-grid">
-          <article class="card no-hover">
-            <h3>次のグレードまで</h3>
-            <ul class="list" id="next-grade-list"></ul>
-          </article>
-          <article class="card no-hover">
-            <h3>SSSまで</h3>
-            <ul class="list" id="sss-grade-list"></ul>
-          </article>
-        </div>
-      </section>
+        <p class="hint">入力内容は上の共有ボタンからURL化できます。</p>
+      </article>
+    </section>
 
-      <footer>個体値を変更しながらグレード変化を確認してください。</footer>
-    </main>
+    <section class="reveal">
+      <div class="section-title">
+        <h2>必要個体値</h2>
+        <span>1ステータスだけ上げる場合</span>
+      </div>
+      <div class="tool-grid">
+        <article class="card no-hover">
+          <h3>次のグレードまで</h3>
+          <ul class="list" id="next-grade-list"></ul>
+        </article>
+        <article class="card no-hover">
+          <h3>SSSまで</h3>
+          <ul class="list" id="sss-grade-list"></ul>
+        </article>
+      </div>
+    </section>
+  </main>
 
-    <script>
-      (() => {
-        const STAT_KEYS = [
-          { key: "hp", label: "HP" },
-          { key: "atk", label: "攻撃" },
-          { key: "mag", label: "魔力" },
-          { key: "def", label: "防御" },
-          { key: "hit", label: "命中" },
-          { key: "agi", label: "敏捷" },
-        ];
+  <script>
+    (() => {
+      const STAT_KEYS = [
+        { key: "hp", label: "HP" },
+        { key: "atk", label: "攻撃" },
+        { key: "mag", label: "魔力" },
+        { key: "def", label: "防御" },
+        { key: "hit", label: "命中" },
+        { key: "agi", label: "敏捷" },
+      ];
 
-        const inputs = {};
-        const pctEls = {};
+      const inputs = {};
+      const pctEls = {};
 
-        function getInput(id) {
-          return document.getElementById(id);
-        }
+      function getInput(id) {
+        return document.getElementById(id);
+      }
 
-        function readNumber(input) {
-          const v = Number(input.value);
-          return Number.isFinite(v) ? v : 0;
-        }
+      function readNumber(input) {
+        const v = Number(input.value);
+        return Number.isFinite(v) ? v : 0;
+      }
 
-        function calcGradeLabel(evalValue) {
-          if (evalValue == null) return "-";
-          if (evalValue < 10) return "-";
-          if (evalValue < 20) return "C";
-          if (evalValue < 30) return "CC";
-          if (evalValue < 40) return "CCC";
-          if (evalValue < 50) return "B";
-          if (evalValue < 60) return "BB";
-          if (evalValue < 70) return "BBB";
-          if (evalValue < 80) return "A";
-          if (evalValue < 90) return "AA";
-          if (evalValue < 100) return "AAA";
-          return "SSS";
-        }
+      function calcGradeLabel(evalValue) {
+        if (evalValue == null) return "-";
+        if (evalValue < 10) return "-";
+        if (evalValue < 20) return "C";
+        if (evalValue < 30) return "CC";
+        if (evalValue < 40) return "CCC";
+        if (evalValue < 50) return "B";
+        if (evalValue < 60) return "BB";
+        if (evalValue < 70) return "BBB";
+        if (evalValue < 80) return "A";
+        if (evalValue < 90) return "AA";
+        if (evalValue < 100) return "AAA";
+        return "SSS";
+      }
 
-        function calcEvalFromSumSq(sumSq) {
-          const raw = Math.sqrt(sumSq / 6) * 200 + 10;
-          if (!Number.isFinite(raw)) return null;
-          return raw;
-        }
+      function calcEvalFromSumSq(sumSq) {
+        const raw = Math.sqrt(sumSq / 6) * 200 + 10;
+        if (!Number.isFinite(raw)) return null;
+        return raw;
+      }
 
-        function calcSumSq(stats) {
-          let sumSq = 0;
-          for (const stat of stats) {
-            if (stat.base > 0) {
-              const r = stat.bonus / stat.base;
-              sumSq += r * r;
-            }
-          }
-          return sumSq;
-        }
-
-        function findMinBonus(stats, targetEval, targetKey) {
-          const target = stats.find((stat) => stat.key === targetKey);
-          if (!target || target.base <= 0) return null;
-
-          let sumOther = 0;
-          for (const stat of stats) {
-            if (stat.key === targetKey) continue;
-            if (stat.base <= 0) continue;
+      function calcSumSq(stats) {
+        let sumSq = 0;
+        for (const stat of stats) {
+          if (stat.base > 0) {
             const r = stat.bonus / stat.base;
-            sumOther += r * r;
-          }
-
-          const k = (targetEval - 10) / 200;
-          const need = Math.max(0, 6 * k * k - sumOther);
-          let start = Math.max(
-            target.bonus,
-            Math.ceil(Math.sqrt(need) * target.base) - 3
-          );
-
-          for (let b = start; b <= target.bonus + 20000; b++) {
-            const sumSq = sumOther + (b / target.base) * (b / target.base);
-            const ev = calcEvalFromSumSq(sumSq);
-            if (ev != null && ev >= targetEval) return b;
-          }
-          return null;
-        }
-
-        function renderNeedList(listEl, stats, targetEval, isInteractive) {
-          listEl.innerHTML = "";
-          const items = [];
-
-          for (const stat of stats) {
-            const minBonus = findMinBonus(stats, targetEval, stat.key);
-            if (minBonus == null) continue;
-            const delta = minBonus - stat.bonus;
-            items.push({
-              key: stat.key,
-              label: stat.label,
-              minBonus,
-              delta,
-              base: stat.base,
-            });
-          }
-
-          if (items.length === 0) {
-            const li = document.createElement("li");
-            li.textContent = "基礎ステータスを入力してください。";
-            listEl.appendChild(li);
-            return;
-          }
-
-          items.forEach((item) => {
-            const li = document.createElement("li");
-            const pct = item.base > 0 ? (item.minBonus / item.base) * 100 : 0;
-            const pctStr = Number.isFinite(pct) ? pct.toFixed(1) : "-";
-            const title = document.createElement("strong");
-            title.textContent = item.label;
-            const detail = document.createElement("span");
-            detail.textContent = `+${item.minBonus} (${pctStr}%) / あと${item.delta}`;
-            li.appendChild(title);
-            li.appendChild(detail);
-            if (isInteractive) {
-              li.classList.add("is-clickable");
-              li.dataset.key = item.key;
-              li.dataset.minBonus = String(item.minBonus);
-            }
-            listEl.appendChild(li);
-          });
-
-          if (isInteractive) {
-            listEl.onclick = (event) => {
-              const target = event.target.closest("li");
-              if (!target || !target.dataset.key) return;
-              const key = target.dataset.key;
-              const minBonus = Number(target.dataset.minBonus);
-              const input = inputs[`bonus-${key}`];
-              if (!input || !Number.isFinite(minBonus)) return;
-              input.value = String(minBonus);
-              updateResult();
-            };
-          } else {
-            listEl.onclick = null;
+            sumSq += r * r;
           }
         }
+        return sumSq;
+      }
 
-        function updateResult() {
-          const stats = STAT_KEYS.map((stat) => ({
+      function findMinBonus(stats, targetEval, targetKey) {
+        const target = stats.find((stat) => stat.key === targetKey);
+        if (!target || target.base <= 0) return null;
+
+        let sumOther = 0;
+        for (const stat of stats) {
+          if (stat.key === targetKey) continue;
+          if (stat.base <= 0) continue;
+          const r = stat.bonus / stat.base;
+          sumOther += r * r;
+        }
+
+        const k = (targetEval - 10) / 200;
+        const need = Math.max(0, 6 * k * k - sumOther);
+        let start = Math.max(
+          target.bonus,
+          Math.ceil(Math.sqrt(need) * target.base) - 3
+        );
+
+        for (let b = start; b <= target.bonus + 20000; b++) {
+          const sumSq = sumOther + (b / target.base) * (b / target.base);
+          const ev = calcEvalFromSumSq(sumSq);
+          if (ev != null && ev >= targetEval) return b;
+        }
+        return null;
+      }
+
+      function renderNeedList(listEl, stats, targetEval, isInteractive) {
+        listEl.innerHTML = "";
+        const items = [];
+
+        for (const stat of stats) {
+          const minBonus = findMinBonus(stats, targetEval, stat.key);
+          if (minBonus == null) continue;
+          const delta = minBonus - stat.bonus;
+          items.push({
             key: stat.key,
             label: stat.label,
-            base: readNumber(inputs[`base-${stat.key}`]),
-            bonus: readNumber(inputs[`bonus-${stat.key}`]),
-          }));
-
-          const sumSq = calcSumSq(stats);
-          const evalRaw = calcEvalFromSumSq(sumSq);
-          const evalValue = evalRaw == null ? null : Math.floor(evalRaw * 10) / 10;
-          const gradeValue = calcGradeLabel(evalValue);
-
-          const evalEl = getInput("eval-value");
-          const gradeEl = getInput("grade-value");
-
-          if (evalValue == null) {
-            evalEl.textContent = "-";
-            gradeEl.textContent = "-";
-          } else {
-            evalEl.textContent = evalValue.toFixed(1);
-            gradeEl.textContent = gradeValue;
-          }
-
-          updateShareUrlField();
-
-          stats.forEach((stat) => {
-            const pctEl = pctEls[`pct-${stat.key}`];
-            if (!pctEl) return;
-            if (stat.base > 0) {
-              const pct = (stat.bonus / stat.base) * 100;
-              pctEl.textContent = `${pct.toFixed(1)}%`;
-            } else {
-              pctEl.textContent = "-";
-            }
+            minBonus,
+            delta,
+            base: stat.base,
           });
-
-          const nextTarget =
-            evalValue == null ? 10 : Math.max(10, (Math.floor(evalValue / 10) + 1) * 10);
-          renderNeedList(
-            getInput("next-grade-list"),
-            stats,
-            Math.min(nextTarget, 100),
-            true
-          );
-          renderNeedList(getInput("sss-grade-list"), stats, 100, false);
         }
 
-        function buildShareUrl() {
-          const params = new URLSearchParams();
+        if (items.length === 0) {
+          const li = document.createElement("li");
+          li.textContent = "基礎ステータスを入力してください。";
+          listEl.appendChild(li);
+          return;
+        }
 
-          const name = getInput("monster-name").value.trim();
-          const kind = getInput("monster-kind").value.trim();
-          if (name) params.set("name", name);
-          if (kind) params.set("kind", kind);
-
-          for (const stat of STAT_KEYS) {
-            const base = readNumber(inputs[`base-${stat.key}`]);
-            const bonus = readNumber(inputs[`bonus-${stat.key}`]);
-            if (base > 0) params.set(`${stat.key}_base`, String(base));
-            if (bonus !== 0) params.set(`${stat.key}_bonus`, String(bonus));
+        items.forEach((item) => {
+          const li = document.createElement("li");
+          const pct = item.base > 0 ? (item.minBonus / item.base) * 100 : 0;
+          const pctStr = Number.isFinite(pct) ? pct.toFixed(1) : "-";
+          const title = document.createElement("strong");
+          title.textContent = item.label;
+          const detail = document.createElement("span");
+          detail.textContent = `+${item.minBonus} (${pctStr}%) / あと${item.delta}`;
+          li.appendChild(title);
+          li.appendChild(detail);
+          if (isInteractive) {
+            li.classList.add("is-clickable");
+            li.dataset.key = item.key;
+            li.dataset.minBonus = String(item.minBonus);
           }
+          listEl.appendChild(li);
+        });
 
-          const query = params.toString();
-          const url = new URL(window.location.href);
-          url.search = query;
-          url.hash = "";
-          return url.toString();
+        if (isInteractive) {
+          listEl.onclick = (event) => {
+            const target = event.target.closest("li");
+            if (!target || !target.dataset.key) return;
+            const key = target.dataset.key;
+            const minBonus = Number(target.dataset.minBonus);
+            const input = inputs[`bonus-${key}`];
+            if (!input || !Number.isFinite(minBonus)) return;
+            input.value = String(minBonus);
+            updateResult();
+          };
+        } else {
+          listEl.onclick = null;
+        }
+      }
+
+      function updateResult() {
+        const stats = STAT_KEYS.map((stat) => ({
+          key: stat.key,
+          label: stat.label,
+          base: readNumber(inputs[`base-${stat.key}`]),
+          bonus: readNumber(inputs[`bonus-${stat.key}`]),
+        }));
+
+        const sumSq = calcSumSq(stats);
+        const evalRaw = calcEvalFromSumSq(sumSq);
+        const evalValue = evalRaw == null ? null : Math.floor(evalRaw * 10) / 10;
+        const gradeValue = calcGradeLabel(evalValue);
+
+        const evalEl = getInput("eval-value");
+        const gradeEl = getInput("grade-value");
+
+        if (evalValue == null) {
+          evalEl.textContent = "-";
+          gradeEl.textContent = "-";
+        } else {
+          evalEl.textContent = evalValue.toFixed(1);
+          gradeEl.textContent = gradeValue;
         }
 
-        function updateShareStatus(message) {
-          const el = getInput("share-status");
-          if (!el) return;
-          el.textContent = message;
+        updateShareUrlField();
+
+        stats.forEach((stat) => {
+          const pctEl = pctEls[`pct-${stat.key}`];
+          if (!pctEl) return;
+          if (stat.base > 0) {
+            const pct = (stat.bonus / stat.base) * 100;
+            pctEl.textContent = `${pct.toFixed(1)}%`;
+          } else {
+            pctEl.textContent = "-";
+          }
+        });
+
+        const nextTarget =
+          evalValue == null ? 10 : Math.max(10, (Math.floor(evalValue / 10) + 1) * 10);
+        renderNeedList(
+          getInput("next-grade-list"),
+          stats,
+          Math.min(nextTarget, 100),
+          true
+        );
+        renderNeedList(getInput("sss-grade-list"), stats, 100, false);
+      }
+
+      function buildShareUrl() {
+        const params = new URLSearchParams();
+
+        const name = getInput("monster-name").value.trim();
+        const kind = getInput("monster-kind").value.trim();
+        if (name) params.set("name", name);
+        if (kind) params.set("kind", kind);
+
+        for (const stat of STAT_KEYS) {
+          const base = readNumber(inputs[`base-${stat.key}`]);
+          const bonus = readNumber(inputs[`bonus-${stat.key}`]);
+          if (base > 0) params.set(`${stat.key}_base`, String(base));
+          if (bonus !== 0) params.set(`${stat.key}_bonus`, String(bonus));
         }
 
-        function updateShareUrlField() {
-          const el = getInput("share-url");
-          if (!el) return;
-          el.value = buildShareUrl();
-        }
+        const query = params.toString();
+        const url = new URL(window.location.href);
+        url.search = query;
+        url.hash = "";
+        return url.toString();
+      }
 
-        async function shareToSns() {
-          const url = buildShareUrl();
-          updateShareUrlField();
-          const title = "エルダーサイン グレード計算";
-          try {
-            if (navigator.share) {
-              await navigator.share({ title, url });
-              updateShareStatus("共有画面を開きました。");
-              return;
-            }
-          } catch (e) {
-            updateShareStatus("共有に失敗しました。URLをコピーしてください。");
+      function updateShareStatus(message) {
+        const el = getInput("share-status");
+        if (!el) return;
+        el.textContent = message;
+      }
+
+      function updateShareUrlField() {
+        const el = getInput("share-url");
+        if (!el) return;
+        el.value = buildShareUrl();
+      }
+
+      async function shareToSns() {
+        const url = buildShareUrl();
+        updateShareUrlField();
+        const title = "エルダーサイン グレード計算";
+        try {
+          if (navigator.share) {
+            await navigator.share({ title, url });
+            updateShareStatus("共有画面を開きました。");
             return;
           }
-          const shareUrl =
-            "https://twitter.com/intent/tweet?url=" +
-            encodeURIComponent(url) +
-            "&text=" +
-            encodeURIComponent(title);
-          window.open(shareUrl, "_blank", "noopener");
-          updateShareStatus("共有ページを開きました。");
+        } catch (e) {
+          updateShareStatus("共有に失敗しました。URLをコピーしてください。");
+          return;
+        }
+        const shareUrl =
+          "https://twitter.com/intent/tweet?url=" +
+          encodeURIComponent(url) +
+          "&text=" +
+          encodeURIComponent(title);
+        window.open(shareUrl, "_blank", "noopener");
+        updateShareStatus("共有ページを開きました。");
+      }
+
+      function applyParams(params) {
+        getInput("monster-name").value = "";
+        getInput("monster-kind").value = "";
+
+        for (const stat of STAT_KEYS) {
+          inputs[`base-${stat.key}`].value = "";
+          inputs[`bonus-${stat.key}`].value = "";
         }
 
-        function applyParams(params) {
-          getInput("monster-name").value = "";
-          getInput("monster-kind").value = "";
+        const name = params.get("name");
+        const kind = params.get("kind");
+        if (name) getInput("monster-name").value = name;
+        if (kind) getInput("monster-kind").value = kind;
 
-          for (const stat of STAT_KEYS) {
-            inputs[`base-${stat.key}`].value = "";
-            inputs[`bonus-${stat.key}`].value = "";
-          }
+        for (const stat of STAT_KEYS) {
+          const baseParam = params.get(`${stat.key}_base`);
+          const bonusParam = params.get(`${stat.key}_bonus`);
 
-          const name = params.get("name");
-          const kind = params.get("kind");
-          if (name) getInput("monster-name").value = name;
-          if (kind) getInput("monster-kind").value = kind;
-
-          for (const stat of STAT_KEYS) {
-            const baseParam = params.get(`${stat.key}_base`);
-            const bonusParam = params.get(`${stat.key}_bonus`);
-
-            if (baseParam != null) inputs[`base-${stat.key}`].value = baseParam;
-            if (bonusParam != null) inputs[`bonus-${stat.key}`].value = bonusParam;
-          }
-
-          updateShareUrlField();
-          updateResult();
+          if (baseParam != null) inputs[`base-${stat.key}`].value = baseParam;
+          if (bonusParam != null) inputs[`bonus-${stat.key}`].value = bonusParam;
         }
 
-        function setFromQueryParams() {
-          applyParams(new URLSearchParams(window.location.search));
-        }
-
-        function bindInputs() {
-          const targets = [
-            getInput("monster-name"),
-            getInput("monster-kind"),
-          ];
-
-          for (const stat of STAT_KEYS) {
-            const baseId = `base-${stat.key}`;
-            const bonusId = `bonus-${stat.key}`;
-            const pctId = `pct-${stat.key}`;
-            inputs[baseId] = getInput(baseId);
-            inputs[bonusId] = getInput(bonusId);
-            pctEls[pctId] = getInput(pctId);
-            targets.push(inputs[baseId], inputs[bonusId]);
-          }
-
-          targets.forEach((el) => {
-            el.addEventListener("input", updateResult);
-          });
-
-          const shareInlineBtn = getInput("share-sns-inline");
-          const shareUrl = getInput("share-url");
-          if (shareInlineBtn) shareInlineBtn.addEventListener("click", shareToSns);
-          if (shareUrl) {
-            shareUrl.addEventListener("click", () => {
-              shareUrl.focus();
-              shareUrl.setSelectionRange(0, shareUrl.value.length);
-              updateShareStatus("URLを選択しました。");
-            });
-            shareUrl.addEventListener("focus", () => {
-              shareUrl.setSelectionRange(0, shareUrl.value.length);
-            });
-          }
-        }
-
-        bindInputs();
-        setFromQueryParams();
+        updateShareUrlField();
         updateResult();
-      })();
-    </script>
-  </body>
+      }
+
+      function setFromQueryParams() {
+        applyParams(new URLSearchParams(window.location.search));
+      }
+
+      function bindInputs() {
+        const targets = [
+          getInput("monster-name"),
+          getInput("monster-kind"),
+        ];
+
+        for (const stat of STAT_KEYS) {
+          const baseId = `base-${stat.key}`;
+          const bonusId = `bonus-${stat.key}`;
+          const pctId = `pct-${stat.key}`;
+          inputs[baseId] = getInput(baseId);
+          inputs[bonusId] = getInput(bonusId);
+          pctEls[pctId] = getInput(pctId);
+          targets.push(inputs[baseId], inputs[bonusId]);
+        }
+
+        targets.forEach((el) => {
+          el.addEventListener("input", updateResult);
+        });
+
+        const shareInlineBtn = getInput("share-sns-inline");
+        const shareUrl = getInput("share-url");
+        if (shareInlineBtn) shareInlineBtn.addEventListener("click", shareToSns);
+        if (shareUrl) {
+          shareUrl.addEventListener("click", () => {
+            shareUrl.focus();
+            shareUrl.setSelectionRange(0, shareUrl.value.length);
+            updateShareStatus("URLを選択しました。");
+          });
+          shareUrl.addEventListener("focus", () => {
+            shareUrl.setSelectionRange(0, shareUrl.value.length);
+          });
+        }
+      }
+
+      bindInputs();
+      setFromQueryParams();
+      updateResult();
+    })();
+  </script>
+  <script src="../footer.js" defer></script>
+</body>
+
 </html>

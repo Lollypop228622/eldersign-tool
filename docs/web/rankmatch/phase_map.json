@@ -14,8 +14,35 @@
       "label": "6期",
       "groups": {
         "S": "./6S.csv",
-        "A1": "",
-        "A2": ""
+        "A1": "./6A1.csv",
+        "A2": "./6A2.csv"
+      }
+    },
+    {
+      "id": "phase5",
+      "label": "5期",
+      "groups": {
+        "S": "./5S.csv",
+        "A1": "./5A1.csv",
+        "A2": "./5A2.csv"
+      }
+    },
+    {
+      "id": "phase4",
+      "label": "4期",
+      "groups": {
+        "S": "./4S.csv",
+        "A1": "./4A1.csv",
+        "A2": "./4A2.csv"
+      }
+    },
+    {
+      "id": "phase3",
+      "label": "3期",
+      "groups": {
+        "S": "./3S.csv",
+        "A1": "./3A1.csv",
+        "A2": "./3A2.csv"
       }
     }
   ]

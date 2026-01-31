@@ -442,13 +442,23 @@
     </section>
   </template>
 
-  <script>
+  <script type="module">
+    import {
+      firebaseEnv,
+      loadFirestoreDoc,
+      saveFirestoreDoc,
+      serverTimestamp,
+    } from "../firebase.js?v1";
+
     (() => {
       const DEFAULT_SLOT_COUNT = 4;
       const SKILL_COUNT = 5;
       const DEFAULT_PARTY_COUNT = 4;
-      const STORAGE_KEY = "eldersign_party_record_v2";
+      const LOCAL_CACHE_KEY = "eldersign_party_record_cache_v2";
       const LEGACY_KEY = "eldersign_party_record_v1";
+      const CLIENT_ID_KEY = "eldersign_party_record_client_id_v1";
+      const FIRESTORE_COLLECTION = "partyRecords";
+      const SAVE_DELAY_MS = 600;
 
       const partyList = document.getElementById("party-list");
       const partyTemplate = document.getElementById("party-template");
@@ -485,18 +495,46 @@
         return Array.from({ length: DEFAULT_SLOT_COUNT }, () => defaultEntry());
       };
 
-      const loadStore = () => {
+      const buildDefaultStore = () => ({
+        activeParty: 1,
+        parties: {},
+        partyCount: DEFAULT_PARTY_COUNT,
+        partyNames: {},
+      });
+
+      const normalizeStore = (raw) => {
+        if (!raw || typeof raw !== "object") {
+          return buildDefaultStore();
+        }
+        return {
+          activeParty: Number.isFinite(raw.activeParty) ? raw.activeParty : 1,
+          parties: raw.parties && typeof raw.parties === "object" ? raw.parties : {},
+          partyCount: Number.isFinite(raw.partyCount) ? raw.partyCount : DEFAULT_PARTY_COUNT,
+          partyNames: raw.partyNames && typeof raw.partyNames === "object" ? raw.partyNames : {},
+        };
+      };
+
+      const getClientId = () => {
         try {
-          const raw = localStorage.getItem(STORAGE_KEY);
+          const stored = localStorage.getItem(CLIENT_ID_KEY);
+          if (stored) return stored;
+          const generated = crypto.randomUUID
+            ? crypto.randomUUID()
+            : `client_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          localStorage.setItem(CLIENT_ID_KEY, generated);
+          return generated;
+        } catch (error) {
+          return "client_fallback";
+        }
+      };
+
+      const readLocalCache = () => {
+        try {
+          const raw = localStorage.getItem(LOCAL_CACHE_KEY);
           if (raw) {
             const parsed = JSON.parse(raw);
             if (parsed && typeof parsed === "object") {
-              return {
-                activeParty: parsed.activeParty || 1,
-                parties: parsed.parties || {},
-                partyCount: parsed.partyCount || DEFAULT_PARTY_COUNT,
-                partyNames: parsed.partyNames || {},
-              };
+              return normalizeStore(parsed);
             }
           }
 
@@ -504,26 +542,68 @@
           if (legacyRaw) {
             const legacyParsed = JSON.parse(legacyRaw);
             if (Array.isArray(legacyParsed)) {
-              return {
+              return normalizeStore({
                 activeParty: 1,
                 parties: { 1: buildParty(legacyParsed) },
                 partyCount: DEFAULT_PARTY_COUNT,
                 partyNames: {},
-              };
+              });
             }
           }
         } catch (error) {
-          return { activeParty: 1, parties: {}, partyCount: DEFAULT_PARTY_COUNT, partyNames: {} };
+          return null;
         }
-        return { activeParty: 1, parties: {}, partyCount: DEFAULT_PARTY_COUNT, partyNames: {} };
+        return null;
       };
 
-      const saveStore = (store) => {
+      const loadStore = async () => {
+        const clientId = getClientId();
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+          const payload = await loadFirestoreDoc([FIRESTORE_COLLECTION, clientId]);
+          if (payload && payload.store) {
+            return { store: normalizeStore(payload.store), source: "firestore" };
+          }
         } catch (error) {
-          // ignore storage errors
+          setStatus("Firestoreの読み込みに失敗しました。ローカルを使用します。");
         }
+
+        const localStore = readLocalCache();
+        if (localStore) return { store: localStore, source: "local" };
+
+        return { store: buildDefaultStore(), source: "default" };
+      };
+
+      let saveTimer = null;
+
+      const saveStore = (store, { immediate = false } = {}) => {
+        try {
+          localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(store));
+        } catch (error) {
+          // ignore cache errors
+        }
+
+        if (saveTimer) {
+          clearTimeout(saveTimer);
+          saveTimer = null;
+        }
+
+        const runSave = async () => {
+          try {
+            await saveFirestoreDoc([FIRESTORE_COLLECTION, getClientId()], {
+              store,
+              updatedAt: serverTimestamp(),
+              env: firebaseEnv,
+            });
+          } catch (error) {
+            setStatus("Firestoreの保存に失敗しました。");
+          }
+        };
+
+        if (immediate) {
+          runSave();
+          return;
+        }
+        saveTimer = setTimeout(runSave, SAVE_DELAY_MS);
       };
 
       const copyText = async (text) => {
@@ -572,13 +652,7 @@
         partyId: null,
       };
 
-      const store = loadStore();
-      if (!Number.isFinite(store.partyCount) || store.partyCount < 1) {
-        store.partyCount = DEFAULT_PARTY_COUNT;
-      }
-      if (!store.partyNames || typeof store.partyNames !== "object") {
-        store.partyNames = {};
-      }
+      let store = buildDefaultStore();
       const ensureParty = (partyId) => {
         if (!store.parties[partyId]) {
           store.parties[partyId] = buildParty();
@@ -594,8 +668,6 @@
       };
       const clampParty = (partyId) =>
         Math.min(store.partyCount, Math.max(1, Number.parseInt(partyId, 10) || 1));
-      ensurePartyCount(store.partyCount);
-      store.activeParty = clampParty(store.activeParty);
       const slotRefs = {};
 
       const updatePreview = (ref, entry) => {
@@ -1177,6 +1249,33 @@
         }
       };
 
+      const initStore = async () => {
+        setStatus("Firestoreから読み込み中...");
+        const { store: loadedStore, source } = await loadStore();
+        store = loadedStore;
+        if (!Number.isFinite(store.partyCount) || store.partyCount < 1) {
+          store.partyCount = DEFAULT_PARTY_COUNT;
+        }
+        if (!store.partyNames || typeof store.partyNames !== "object") {
+          store.partyNames = {};
+        }
+        ensurePartyCount(store.partyCount);
+        store.activeParty = clampParty(store.activeParty);
+        renderAll();
+        const shareData = readShareData();
+        if (shareData && applySharePayload(shareData, shareData.party)) {
+          if (history.replaceState) {
+            history.replaceState(null, "", window.location.pathname);
+          }
+        } else {
+          applyIncoming(readIncoming());
+        }
+        if (source !== "firestore") {
+          saveStore(store, { immediate: true });
+        }
+        setStatus("保存は自動です");
+      };
+
       if (toastUndo) {
         toastUndo.addEventListener("click", () => {
           if (!toastState.onUndo) return;
@@ -1189,15 +1288,7 @@
       if (addPartyButton) {
         addPartyButton.addEventListener("click", addParty);
       }
-      renderAll();
-      const shareData = readShareData();
-      if (shareData && applySharePayload(shareData, shareData.party)) {
-        if (history.replaceState) {
-          history.replaceState(null, "", window.location.pathname);
-        }
-      } else {
-        applyIncoming(readIncoming());
-      }
+      initStore();
     })();
   </script>
   <script src="../footer.js" defer></script>

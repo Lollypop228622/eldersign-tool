@@ -25,7 +25,7 @@
       const normalized = text.replace(/\s+/g, "");
       const withTotal = normalized.match(/全\s*([\d,]+)\s*\/\s*([\d,]+)\s*(?:枚|人|件)?/);
       if (withTotal) {
-        return parseInt(withTotal[2].replace(/,/g, ""), 10);
+        return parseInt(withTotal[1].replace(/,/g, ""), 10);
       }
       const totalOnly = normalized.match(/全\s*([\d,]+)\s*(?:枚|人|件)?/);
       if (totalOnly) {

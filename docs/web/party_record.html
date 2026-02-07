@@ -8,7 +8,7 @@
   <title>PT記録ツール</title>
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-  <link rel="stylesheet" href="../theme.css" />
+  <link rel="stylesheet" href="../theme.css?v2" />
   <style>
     .tool-actions {
       display: flex;
@@ -19,18 +19,90 @@
       margin-bottom: 16px;
     }
 
-    .auth-actions {
-      display: grid;
+    .header-actions {
+      display: inline-flex;
+      align-items: center;
       gap: 8px;
-      font-size: 0.85rem;
+      flex-wrap: wrap;
+    }
+
+    header.reveal {
+      position: relative;
+      overflow: visible;
+    }
+
+    .party-shell {
+      position: relative;
+    }
+
+    header.reveal .auth-anchor {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+    }
+
+    .auth-trigger {
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      border: 1px solid var(--md-sys-outline-variant);
+      background: var(--md-sys-surface);
+      color: var(--md-sys-on-surface);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .auth-trigger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 18px var(--md-sys-shadow);
+    }
+
+    .auth-trigger.is-logged-in {
+      border-color: color-mix(in srgb, var(--md-sys-primary) 50%, var(--md-sys-outline-variant));
+      color: var(--md-sys-primary);
+    }
+
+    .auth-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 10px);
+      min-width: 280px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid var(--md-sys-outline-variant);
+      background: var(--md-sys-surface);
+      color: var(--md-sys-on-surface);
+      box-shadow: 0 16px 35px color-mix(in srgb, var(--md-sys-shadow) 65%, transparent);
+      display: none;
+      z-index: 1000;
+    }
+
+    .auth-menu.is-open {
+      display: grid;
+      gap: 12px;
+    }
+
+    .auth-menu-header {
+      display: grid;
+      gap: 4px;
+    }
+
+    .auth-menu-header strong {
+      font-size: 0.95rem;
+    }
+
+    .auth-menu-header span {
+      font-size: 0.8rem;
       color: var(--md-sys-on-surface-variant);
+      word-break: break-all;
     }
 
     .auth-form {
       display: grid;
       gap: 8px;
-      grid-template-columns: minmax(160px, 1fr) minmax(140px, 1fr);
-      align-items: center;
     }
 
     .auth-form input {
@@ -43,9 +115,21 @@
       font-size: 0.85rem;
     }
 
-    .auth-actions .button {
+    .auth-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .auth-menu .button {
       min-width: auto;
       padding: 8px 12px;
+      width: 100%;
+    }
+
+    .auth-meta {
+      font-size: 0.75rem;
+      color: var(--md-sys-on-surface-variant);
     }
 
     .status-text {
@@ -368,7 +452,30 @@
   <main>
     <header class="reveal">
       <p class="subtitle">Eldersign Toolkit</p>
-      <h1>PT記録ツール</h1>
+      <div class="header-actions">
+        <h1>PT記録ツール</h1>
+      </div>
+      <div class="auth-anchor">
+        <button class="auth-trigger" type="button" id="auth-trigger" aria-haspopup="dialog"
+          aria-expanded="false">
+          <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
+        </button>
+        <div class="auth-menu" id="auth-menu" role="dialog" aria-label="ログインメニュー">
+          <div class="auth-menu-header">
+            <strong id="auth-title">未ログイン</strong>
+            <span id="auth-subtitle">ログインすると他端末と共有できます</span>
+          </div>
+            <div class="auth-form" id="auth-form">
+              <input type="email" id="auth-email" placeholder="メールアドレス" autocomplete="email" />
+              <input type="password" id="auth-password" placeholder="パスワード" autocomplete="current-password" />
+              <div class="auth-buttons">
+                <button class="button secondary" type="button" id="auth-email-login">ログイン</button>
+                <button class="button secondary" type="button" id="auth-email-signup">新規登録</button>
+              </div>
+            </div>
+          <button class="button secondary" type="button" id="auth-signout">ログアウト</button>
+        </div>
+      </div>
       <p class="subtitle">育成計画のメモにどうぞ</p>
       <div class="nav-links">
         <a class="button secondary" href="../index.html">ツール集へ戻る</a>
@@ -378,33 +485,7 @@
 
     <section class="reveal">
       <div class="section-title">
-        <h2>使い方</h2>
-        <span>手入力でもOK</span>
-      </div>
-      <div class="note">
-        モンスターカード画面で「PT記録へ送る」ブックマークレットを実行すると、このページにデータが送られます。
-        受け取ったデータは空いている枠に自動で入ります。手入力で編集してもOKです。
-      </div>
-    </section>
-
-    <section class="reveal">
-      <div class="section-title">
         <h2>PTメモ</h2>
-        <span>1PT=4枠</span>
-      </div>
-      <div class="tool-actions">
-        <div class="status-text" id="status-text">保存は自動です</div>
-        <div class="auth-actions">
-          <span id="auth-status">未ログイン</span>
-          <div class="auth-form" id="auth-form">
-            <input type="email" id="auth-email" placeholder="メールアドレス" autocomplete="email" />
-            <input type="password" id="auth-password" placeholder="パスワード" autocomplete="current-password" />
-            <button class="button secondary" type="button" id="auth-email-login">ログイン</button>
-            <button class="button secondary" type="button" id="auth-email-signup">新規登録</button>
-            <button class="button secondary" type="button" id="auth-email-reset">再設定メール</button>
-          </div>
-          <button class="button secondary" type="button" id="auth-signout">ログアウト</button>
-        </div>
       </div>
       <div class="party-list" id="party-list"></div>
       <div class="party-add">
@@ -471,11 +552,12 @@
       <div class="party-header">
         <input class="party-name" type="text" placeholder="PT名" />
         <div class="party-actions">
-          <button class="button secondary" type="button" data-action="share">共有URLをコピー</button>
-          <button class="button secondary" type="button" data-action="export">JSONエクスポート</button>
-          <button class="button secondary" type="button" data-action="import">JSONインポート</button>
-          <button class="button secondary" type="button" data-action="add">枠を追加</button>
-          <button class="button secondary" type="button" data-action="clear">このPTを全消去</button>
+          <button class="icon-button" type="button" data-action="add" aria-label="枠を追加">
+            <span class="material-symbols-outlined" aria-hidden="true">add</span>
+          </button>
+          <button class="icon-button" type="button" data-action="clear" aria-label="このPTを全消去">
+            <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+          </button>
         </div>
       </div>
       <div class="party-grid"></div>
@@ -493,9 +575,8 @@
       signInEmail,
       signUpEmail,
       linkEmail,
-      resetPassword,
       signOutUser,
-    } from "../firebase.js?v16";
+    } from "../firebase.js?v19";
 
     (async () => {
       const DEFAULT_SLOT_COUNT = 4;
@@ -514,13 +595,15 @@
       const toast = document.getElementById("toast");
       const toastMessage = document.getElementById("toast-message");
       const toastUndo = document.getElementById("toast-undo");
-      const authStatus = document.getElementById("auth-status");
+      const authTrigger = document.getElementById("auth-trigger");
+      const authMenu = document.getElementById("auth-menu");
+      const authTitle = document.getElementById("auth-title");
+      const authSubtitle = document.getElementById("auth-subtitle");
       const authForm = document.getElementById("auth-form");
       const authEmailInput = document.getElementById("auth-email");
       const authPasswordInput = document.getElementById("auth-password");
       const authEmailLoginButton = document.getElementById("auth-email-login");
       const authEmailSignupButton = document.getElementById("auth-email-signup");
-      const authEmailResetButton = document.getElementById("auth-email-reset");
       const authSignoutButton = document.getElementById("auth-signout");
 
 
@@ -671,16 +754,14 @@
       };
 
       const setAuthStatus = (user) => {
-        if (!authStatus) return;
-        if (!user) {
-          authStatus.textContent = "未ログイン";
+        if (!authTitle || !authSubtitle) return;
+        if (!user || user.isAnonymous) {
+          authTitle.textContent = "未ログイン";
+          authSubtitle.textContent = "ログインすると他端末と共有できます";
           return;
         }
-        if (user.isAnonymous) {
-          authStatus.textContent = "匿名で利用中";
-          return;
-        }
-        authStatus.textContent = user.email || "Googleログイン中";
+        authTitle.textContent = "ログイン中";
+        authSubtitle.textContent = user.email || "メールログイン中";
       };
 
       const updateAuthButtons = (user) => {
@@ -688,10 +769,12 @@
         if (!user || user.isAnonymous) {
           authForm.style.display = "grid";
           authSignoutButton.style.display = "none";
+          if (authTrigger) authTrigger.classList.remove("is-logged-in");
           return;
         }
         authForm.style.display = "none";
         authSignoutButton.style.display = "inline-flex";
+        if (authTrigger) authTrigger.classList.add("is-logged-in");
       };
 
       const toastState = {
@@ -959,58 +1042,6 @@
         setStatus(`PT${nextPartyId}を追加しました`);
       };
 
-      const serializeEntry = (entry) => ({
-        name: entry.name || "",
-        imageUrl: entry.imageUrl || "",
-        skills: Array.from({ length: SKILL_COUNT }, (_, index) => entry.skills[index] || ""),
-      });
-
-      const buildSharePayload = (partyId) => ({
-        party: partyId,
-        entries: getPartyEntries(partyId).map((entry) => serializeEntry(entry)),
-      });
-
-      const encodeSharePayload = (payload) => {
-        const json = JSON.stringify(payload);
-        const utf8 = encodeURIComponent(json);
-        return btoa(utf8);
-      };
-
-      const decodeSharePayload = (value) => {
-        const decoded = decodeURIComponent(atob(value));
-        return JSON.parse(decoded);
-      };
-
-      const applySharePayload = (payload, partyId) => {
-        if (!payload || !Array.isArray(payload.entries)) {
-          throw new Error("共有データの形式が不正です");
-        }
-        const targetParty = Math.max(1, Math.floor(partyId || payload.party || 1));
-        if (targetParty > store.partyCount) {
-          ensurePartyCount(targetParty);
-        }
-        const confirmed = window.confirm(`PT${targetParty}に共有データを読み込みます。上書きしますか？`);
-        if (!confirmed) return false;
-        const entries = buildParty(payload.entries);
-        store.parties[targetParty] = entries;
-        renderAll();
-        saveStore(store);
-        setStatus(`PT${targetParty}に共有データを読み込みました`);
-        return true;
-      };
-
-      const readShareData = () => {
-        const params = new URLSearchParams(window.location.search);
-        const raw = params.get("share");
-        if (!raw) return null;
-        try {
-          return decodeSharePayload(raw);
-        } catch (error) {
-          setStatus("共有データの読み込みに失敗しました");
-          return null;
-        }
-      };
-
       const openImageEditor = (partyId, index) => {
         const ref = slotRefs[partyId] ? slotRefs[partyId][index] : null;
         if (!ref) return;
@@ -1264,44 +1295,6 @@
           actions.forEach((button) => {
             button.dataset.party = String(partyId);
             const action = button.dataset.action;
-            if (action === "share") {
-              button.addEventListener("click", async () => {
-                try {
-                  const payload = buildSharePayload(partyId);
-                  const encoded = encodeSharePayload(payload);
-                  const baseUrl = `${window.location.origin}${window.location.pathname}`;
-                  const shareUrl = `${baseUrl}?share=${encoded}`;
-                  await copyText(shareUrl);
-                  setStatus(`PT${partyId}の共有URLをコピーしました`);
-                } catch (error) {
-                  setStatus("共有URLの作成に失敗しました");
-                }
-              });
-            }
-            if (action === "export") {
-              button.addEventListener("click", async () => {
-                try {
-                  const payload = buildSharePayload(partyId);
-                  const json = JSON.stringify(payload);
-                  await copyText(json);
-                  setStatus(`PT${partyId}のJSONをコピーしました`);
-                } catch (error) {
-                  setStatus("JSONのコピーに失敗しました");
-                }
-              });
-            }
-            if (action === "import") {
-              button.addEventListener("click", () => {
-                const text = window.prompt("共有JSONを貼り付けてください");
-                if (!text) return;
-                try {
-                  const payload = JSON.parse(text);
-                  applySharePayload(payload, partyId);
-                } catch (error) {
-                  setStatus("JSONの読み込みに失敗しました");
-                }
-              });
-            }
             if (action === "add") {
               button.addEventListener("click", () => {
                 addSlot(partyId);
@@ -1336,14 +1329,7 @@
         store.activeParty = clampParty(store.activeParty);
         renderAll();
         if (!hasAppliedIncoming) {
-          const shareData = readShareData();
-          if (shareData && applySharePayload(shareData, shareData.party)) {
-            if (history.replaceState) {
-              history.replaceState(null, "", window.location.pathname);
-            }
-          } else {
-            applyIncoming(readIncoming());
-          }
+          applyIncoming(readIncoming());
           hasAppliedIncoming = true;
         }
         if (source !== "firestore") {
@@ -1364,14 +1350,7 @@
         store.activeParty = clampParty(store.activeParty);
         renderAll();
         if (!hasAppliedIncoming) {
-          const shareData = readShareData();
-          if (shareData && applySharePayload(shareData, shareData.party)) {
-            if (history.replaceState) {
-              history.replaceState(null, "", window.location.pathname);
-            }
-          } else {
-            applyIncoming(readIncoming());
-          }
+          applyIncoming(readIncoming());
           hasAppliedIncoming = true;
         }
         setStatus("ログインすると他端末と共有できます");
@@ -1502,6 +1481,9 @@
               await migrateIfNeeded(currentUid, result.user.uid);
               await initStore(result.user.uid);
             }
+            if (result && result.user) {
+              await handleAuthChange(result.user);
+            }
             setStatus("アカウントを作成しました。");
             authPasswordInput.value = "";
           } catch (error) {
@@ -1512,24 +1494,42 @@
         });
       }
 
-      if (authEmailResetButton) {
-        authEmailResetButton.addEventListener("click", async () => {
-          if (!authEmailInput) return;
-          const email = authEmailInput.value.trim();
-          if (!email) {
-            setStatus("メールアドレスを入力してください。");
-            return;
-          }
-          try {
-            await resetPassword(email);
-            setStatus("再設定メールを送信しました。");
-          } catch (error) {
-            const detail = error && (error.code || error.message);
-            console.error("再設定メール失敗", error);
-            setStatus(`再設定メールの送信に失敗しました。${detail || ""}`);
+      const closeAuthMenu = () => {
+        if (!authMenu || !authTrigger) return;
+        authMenu.classList.remove("is-open");
+        authTrigger.setAttribute("aria-expanded", "false");
+      };
+
+      const openAuthMenu = () => {
+        if (!authMenu || !authTrigger) return;
+        authMenu.classList.add("is-open");
+        authTrigger.setAttribute("aria-expanded", "true");
+      };
+
+      if (authTrigger) {
+        authTrigger.addEventListener("click", (event) => {
+          event.stopPropagation();
+          if (!authMenu) return;
+          if (authMenu.classList.contains("is-open")) {
+            closeAuthMenu();
+          } else {
+            openAuthMenu();
           }
         });
       }
+
+      document.addEventListener("click", (event) => {
+        if (!authMenu || !authMenu.classList.contains("is-open")) return;
+        const target = event.target;
+        if (authMenu.contains(target) || (authTrigger && authTrigger.contains(target))) return;
+        closeAuthMenu();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        if (!authMenu || !authMenu.classList.contains("is-open")) return;
+        closeAuthMenu();
+      });
       if (authSignoutButton) {
         authSignoutButton.addEventListener("click", async () => {
           try {

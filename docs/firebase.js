@@ -13,7 +13,6 @@ import {
   EmailAuthProvider,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  sendPasswordResetEmail,
   linkWithCredential,
   signOut,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
@@ -102,10 +101,6 @@ const linkEmail = async (email, password) => {
   return linkWithCredential(auth.currentUser, credential);
 };
 
-const resetPassword = async (email) => {
-  const auth = await ensureAuth();
-  return sendPasswordResetEmail(auth, email);
-};
 
 const signOutUser = async () => {
   const auth = await ensureAuth();
@@ -137,6 +132,5 @@ export {
   signInEmail,
   signUpEmail,
   linkEmail,
-  resetPassword,
   signOutUser,
 };

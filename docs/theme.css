@@ -247,6 +247,12 @@ h1 {
   line-height: 1.5;
 }
 
+.surface-card {
+  border: 1px solid var(--md-sys-outline-variant);
+  background: color-mix(in srgb, var(--md-sys-surface) 80%, var(--md-sys-primary-container));
+  box-shadow: 0 10px 25px var(--md-sys-shadow);
+}
+
 .card-media {
   width: 200px;
   height: 280px;

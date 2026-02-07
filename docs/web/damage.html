@@ -6,30 +6,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
   <title>ダメージ計算ツール</title>
-  <link rel="stylesheet" href="../theme.css" />
+  <link rel="stylesheet" href="../theme.css?v3" />
   <style>
-    .tool-grid {
-      display: grid;
-      gap: 18px;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    }
-
     .form-grid {
       display: grid;
       gap: 12px;
     }
 
+    .form-sections {
+      display: grid;
+      gap: 12px;
+    }
+
+    .input-card {
+      padding: 12px;
+      border-radius: 12px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .input-card h4 {
+      margin: 0;
+    }
+
+    .result-panel {
+      position: sticky;
+      top: 8px;
+      z-index: 5;
+      margin-top: 10px;
+      margin-bottom: 14px;
+    }
+
     .input-row {
       display: grid;
-      gap: 8px;
+      grid-template-columns: 140px minmax(0, 1fr);
+      gap: 8px 10px;
+      align-items: center;
     }
 
     .input-row label {
       font-weight: 600;
+      margin: 0;
     }
 
     .input-row input,
     .input-row select {
+      grid-column: 2;
       width: 100%;
       padding: 10px 12px;
       border-radius: 12px;
@@ -37,6 +59,14 @@
       background: var(--md-sys-surface);
       color: var(--md-sys-on-surface);
       font-size: 0.95rem;
+    }
+
+    .input-row input[type="hidden"] {
+      display: none;
+    }
+
+    .input-row .chip-group {
+      grid-column: 2;
     }
 
     .toggle-item {
@@ -56,28 +86,31 @@
 
     .result-card {
       display: grid;
-      gap: 8px;
-      padding: 14px 16px;
-      border-radius: 16px;
+      gap: 6px;
+      padding: 10px 12px;
+      border-radius: 12px;
       background: var(--md-sys-surface);
       border: 1px solid var(--md-sys-outline-variant);
     }
 
+    .result-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px;
+    }
+
     .result-label {
       color: var(--md-sys-on-surface-variant);
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+      font-size: 0.9rem;
+      text-transform: none;
+      letter-spacing: normal;
     }
 
     .result-value {
-      font-size: 1.6rem;
+      font-size: 1rem;
       font-weight: 700;
-    }
-
-    .result-meta {
-      font-size: 0.9rem;
-      color: var(--md-sys-on-surface-variant);
+      text-align: right;
     }
 
     .chip-group {
@@ -141,20 +174,31 @@
       box-shadow: 0 0 0 1px color-mix(in srgb, #8a8a8a 70%, transparent);
     }
 
-    .card {
-      transition: none;
-    }
-
-    .card:hover {
-      transform: none;
-      box-shadow: 0 10px 25px var(--md-sys-shadow);
-    }
-
     .hint {
       margin: 0;
       font-size: 0.9rem;
       color: var(--md-sys-on-surface-variant);
       line-height: 1.6;
+    }
+
+    .is-hidden {
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      .input-row {
+        grid-template-columns: 110px minmax(0, 1fr);
+      }
+    }
+
+    @media (min-width: 960px) {
+      .form-sections {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .input-card--skill {
+        grid-column: 1 / -1;
+      }
     }
   </style>
 </head>
@@ -171,185 +215,139 @@
     </header>
 
     <section class="reveal">
-      <div class="section-title">
-        <h2>攻撃・吸収</h2>
-        <span>防御の影響を受けるタイプ</span>
+      <div class="result-panel">
+        <div class="result-card">
+          <div class="result-row">
+            <div class="result-label">ダメージ(乱数前)</div>
+            <div class="result-value" id="atk-damage-base">-</div>
+          </div>
+          <div class="result-row">
+            <div class="result-label">乱数範囲</div>
+            <div class="result-value" id="atk-damage-range">-</div>
+          </div>
+          <div class="result-row">
+            <div class="result-label">命中率</div>
+            <div class="result-value" id="hit-raw">-</div>
+          </div>
+        </div>
       </div>
-      <div class="tool-grid">
-        <article class="card no-hover">
-          <h3>入力</h3>
-          <div class="form-grid">
-            <h4>スキル性能</h4>
-            <div class="input-row">
-              <label for="atk-coeff">係数</label>
-              <input id="atk-coeff" type="number" min="0" step="0.1" value="100" />
+      <div class="form-sections">
+        <div class="input-card surface-card input-card--skill">
+          <h4>スキル性能</h4>
+          <div class="input-row">
+              <label for="skill-type">種別</label>
+              <input type="hidden" id="skill-type" value="attack" />
+              <div class="chip-group" data-chip-target="skill-type">
+                <button type="button" class="chip-button is-active" data-value="attack">攻撃・吸収</button>
+                <button type="button" class="chip-button" data-value="heal">付与・回復</button>
+              </div>
+          </div>
+          <div class="input-row">
+              <label for="skill-coeff">係数</label>
+              <input id="skill-coeff" type="number" min="0" step="0.1" value="100" />
+          </div>
+          <div class="input-row">
+              <label for="hit-skill">命中</label>
+              <input id="hit-skill" type="number" min="0" step="1" value="120" />
             </div>
             <div class="input-row">
-              <label for="atk-source">ソース(複数はカンマ区切り)</label>
-              <input id="atk-source" type="text" placeholder="例: 1200, 1500" />
+              <label for="skill-source">ソース(複数はカンマ区切り)</label>
+              <input id="skill-source" type="text" placeholder="例: 1200, 1500" />
             </div>
-            <label class="toggle-item">
-              <input id="atk-source-fixed" type="checkbox" />
-              <span>ソース固定値 (スキル強度=係数)</span>
-            </label>
-            <div class="input-row">
-              <label for="atk-attr">属性</label>
-              <input type="hidden" id="atk-attr" value="physical" />
-              <div class="chip-group" data-chip-target="atk-attr">
+          <div class="input-row mode-attack">
+              <label for="skill-attr">属性</label>
+              <input type="hidden" id="skill-attr" value="physical" />
+              <div class="chip-group" data-chip-target="skill-attr">
                 <button type="button" class="chip-button is-active" data-value="physical">物理</button>
                 <button type="button" class="chip-button" data-value="element">炎冷</button>
                 <button type="button" class="chip-button" data-value="void">虚軸</button>
               </div>
-            </div>
-            <h4>攻撃側ステータス</h4>
-            <div class="input-row">
-              <label for="atk-resist">耐性(%)</label>
-              <input id="atk-resist" type="number" step="1" value="0" />
-            </div>
-            <div class="input-row">
-              <label for="atk-apt">適正(%)</label>
-              <input id="atk-apt" type="number" step="1" value="0" />
-            </div>
-            <div class="input-row">
-              <label for="atk-buff">強化(%)</label>
-              <input id="atk-buff" type="number" step="1" value="0" />
-            </div>
-            <h4>防御側ステータス</h4>
-            <div class="input-row">
-              <label for="def-value">防御</label>
-              <input id="def-value" type="number" min="0" step="1" value="0" />
-            </div>
-            <label class="toggle-item">
-              <input id="def-hardening" type="checkbox" />
-              <span>硬化Lv10</span>
-            </label>
-            <label class="toggle-item">
-              <input id="def-critical" type="checkbox" />
-              <span>クリティカル</span>
-            </label>
-            <div class="input-row">
-              <label for="union-reduce">ユニオン補正(減少%)</label>
-              <input id="union-reduce" type="number" min="0" max="10" step="1" value="0" />
-            </div>
           </div>
-        </article>
+        </div>
 
-        <article class="card no-hover">
-          <h3>結果</h3>
-          <div class="result-card">
-            <div class="result-label">スキル強度</div>
-            <div class="result-value" id="atk-skill-power">-</div>
-            <div class="result-meta" id="atk-skill-meta">-</div>
+        <div class="input-card surface-card">
+          <h4>攻撃側ステータス</h4>
+          <div class="input-row">
+              <label for="skill-apt-passive">P適正(%)</label>
+              <input id="skill-apt-passive" type="number" step="1" value="0" />
           </div>
-          <div class="result-card">
-            <div class="result-label">防御強度</div>
-            <div class="result-value" id="def-power">-</div>
-            <div class="result-meta" id="def-meta">-</div>
+          <div class="input-row">
+              <label for="skill-apt-active">A適正(%)</label>
+              <input id="skill-apt-active" type="number" step="1" value="0" />
           </div>
-          <div class="result-card">
-            <div class="result-label">ダメージ(乱数前)</div>
-            <div class="result-value" id="atk-damage-base">-</div>
-            <div class="result-meta" id="atk-damage-meta">-</div>
+          <div class="input-row">
+              <label for="skill-buff">強化(%)</label>
+              <input id="skill-buff" type="number" step="1" value="0" />
           </div>
-          <div class="result-card">
-            <div class="result-label">乱数範囲(0.875〜1.125)</div>
-            <div class="result-value" id="atk-damage-range">-</div>
-            <div class="result-meta" id="atk-damage-range-meta">-</div>
+          <div class="input-row">
+              <label for="skill-seal">封技/封術Lv</label>
+              <input id="skill-seal" type="number" min="0" max="10" step="1" value="0" />
           </div>
-        </article>
-      </div>
-      <p class="hint">
-        耐性補正=(100-耐性)%、適正補正=(100+適正)%。
-      </p>
-    </section>
-
-    <section class="reveal">
-      <div class="section-title">
-        <h2>付与・回復</h2>
-        <span>防御強度を使わないタイプ</span>
-      </div>
-      <div class="tool-grid">
-        <article class="card no-hover">
-          <h3>入力</h3>
-          <div class="form-grid">
-            <div class="input-row">
-              <label for="heal-coeff">係数</label>
-              <input id="heal-coeff" type="number" min="0" step="0.1" value="100" />
-            </div>
-            <div class="input-row">
-              <label for="heal-source">ソース</label>
-              <input id="heal-source" type="number" min="0" step="1" value="0" />
-            </div>
-            <div class="input-row">
-              <label for="heal-resist">耐性(%)</label>
-              <input id="heal-resist" type="number" step="1" value="0" />
-            </div>
-            <div class="input-row">
-              <label for="heal-apt">適正(%)</label>
-              <input id="heal-apt" type="number" step="1" value="0" />
-            </div>
-            <div class="input-row">
-              <label for="heal-buff">強化(%)</label>
-              <input id="heal-buff" type="number" step="1" value="0" />
-            </div>
-          </div>
-        </article>
-
-        <article class="card no-hover">
-          <h3>結果</h3>
-          <div class="result-card">
-            <div class="result-label">付与・回復量</div>
-            <div class="result-value" id="heal-result">-</div>
-            <div class="result-meta" id="heal-meta">-</div>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="reveal">
-      <div class="section-title">
-        <h2>命中率</h2>
-      </div>
-      <div class="tool-grid">
-        <article class="card no-hover">
-          <h3>入力</h3>
-          <div class="form-grid">
-            <div class="input-row">
-              <label for="hit-skill">スキル命中</label>
-              <input id="hit-skill" type="number" min="0" step="1" value="120" />
-            </div>
-            <div class="input-row">
-              <label for="hit-attacker">攻撃側命中</label>
+          <div class="input-row">
+              <label for="hit-attacker">命中</label>
               <input id="hit-attacker" type="number" min="0" step="1" value="0" />
             </div>
-            <div class="input-row">
-              <label for="hit-defender">防御側敏捷</label>
-              <input id="hit-defender" type="number" min="0" step="1" value="0" />
-            </div>
-            <label class="toggle-item">
+          <div class="input-row">
+              <label for="hit-dizzy-attacker">眩暈Lv</label>
+              <input id="hit-dizzy-attacker" type="number" min="0" max="10" step="1" value="0" />
+          </div>
+          <label class="toggle-item">
               <input id="hit-after" type="checkbox" />
               <span>後攻補正 +100%</span>
-            </label>
-            <label class="toggle-item">
+          </label>
+          <label class="toggle-item">
               <input id="hit-monarch" type="checkbox" />
               <span>君主補正 +50%</span>
-            </label>
-            <label class="toggle-item">
+          </label>
+          <label class="toggle-item">
               <input id="hit-eye" type="checkbox" />
-              <span>アビリティ神眼(上限99/下限10)</span>
-            </label>
-          </div>
-        </article>
+              <span>アビリティ神眼(上限99/下限30)</span>
+          </label>
+        </div>
 
-        <article class="card no-hover">
-          <h3>結果</h3>
-          <div class="result-card">
-            <div class="result-label">命中率(計算値)</div>
-            <div class="result-value" id="hit-raw">-</div>
-            <div class="result-meta" id="hit-raw-meta">-</div>
+        <div class="input-card surface-card">
+          <h4>防御側ステータス</h4>
+          <div class="input-row mode-attack">
+              <label for="def-value">防御</label>
+              <input id="def-value" type="number" min="0" step="1" value="3000" />
           </div>
-        </article>
+          <div class="input-row">
+              <label for="skill-resist-passive">P耐性(%)</label>
+              <input id="skill-resist-passive" type="number" step="1" value="0" />
+          </div>
+          <div class="input-row">
+              <label for="skill-resist-active">A耐性(%)</label>
+              <input id="skill-resist-active" type="number" step="1" value="0" />
+          </div>
+          <div class="input-row mode-attack">
+              <label for="def-alert">隙</label>
+              <input id="def-alert" type="number" min="0" max="100" step="1" value="0" />
+          </div>
+          <div class="input-row mode-attack">
+              <label for="union-reduce">ユニオン補正(%)</label>
+              <input id="union-reduce" type="number" min="0" max="10" step="1" value="10" />
+          </div>
+          <div class="input-row">
+              <label for="hit-defender">敏捷</label>
+              <input id="hit-defender" type="number" min="0" step="1" value="0" />
+          </div>
+          <div class="input-row">
+              <label for="hit-dizzy-defender">眩暈Lv</label>
+              <input id="hit-dizzy-defender" type="number" min="0" max="10" step="1" value="0" />
+          </div>
+          <label class="toggle-item mode-attack">
+              <input id="def-hardening" type="checkbox" />
+              <span>硬化Lv10</span>
+          </label>
+          <label class="toggle-item mode-attack">
+              <input id="def-critical" type="checkbox" />
+              <span>クリティカル</span>
+          </label>
+        </div>
       </div>
+      <p class="hint">
+        耐性補正=(100-耐性(P))% × (100-耐性(A))%、適正補正=(100+適正(P))% × (100+適正(A))%。
+      </p>
     </section>
   </main>
 
@@ -357,45 +355,38 @@
     (() => {
       const RANDOM_MIN = 0.875;
       const RANDOM_MAX = 1.125;
+      const STORAGE_KEY = "eldersign_damage_form_v1";
 
       const inputs = {
-        atkCoeff: document.getElementById("atk-coeff"),
-        atkSource: document.getElementById("atk-source"),
-        atkSourceFixed: document.getElementById("atk-source-fixed"),
-        atkAttr: document.getElementById("atk-attr"),
-        atkResist: document.getElementById("atk-resist"),
-        atkApt: document.getElementById("atk-apt"),
-        atkBuff: document.getElementById("atk-buff"),
+        skillType: document.getElementById("skill-type"),
+        skillCoeff: document.getElementById("skill-coeff"),
+        skillSource: document.getElementById("skill-source"),
+        skillAttr: document.getElementById("skill-attr"),
+        skillResistPassive: document.getElementById("skill-resist-passive"),
+        skillResistActive: document.getElementById("skill-resist-active"),
+        skillAptPassive: document.getElementById("skill-apt-passive"),
+        skillAptActive: document.getElementById("skill-apt-active"),
+        skillBuff: document.getElementById("skill-buff"),
+        skillSeal: document.getElementById("skill-seal"),
         defValue: document.getElementById("def-value"),
+        defAlert: document.getElementById("def-alert"),
         defHardening: document.getElementById("def-hardening"),
         defCritical: document.getElementById("def-critical"),
         unionReduce: document.getElementById("union-reduce"),
-        healCoeff: document.getElementById("heal-coeff"),
-        healSource: document.getElementById("heal-source"),
-        healResist: document.getElementById("heal-resist"),
-        healApt: document.getElementById("heal-apt"),
-        healBuff: document.getElementById("heal-buff"),
         hitSkill: document.getElementById("hit-skill"),
         hitAttacker: document.getElementById("hit-attacker"),
         hitDefender: document.getElementById("hit-defender"),
+        hitDizzyAttacker: document.getElementById("hit-dizzy-attacker"),
+        hitDizzyDefender: document.getElementById("hit-dizzy-defender"),
         hitAfter: document.getElementById("hit-after"),
         hitMonarch: document.getElementById("hit-monarch"),
         hitEye: document.getElementById("hit-eye"),
       };
 
       const outputs = {
-        atkSkillPower: document.getElementById("atk-skill-power"),
-        atkSkillMeta: document.getElementById("atk-skill-meta"),
-        defPower: document.getElementById("def-power"),
-        defMeta: document.getElementById("def-meta"),
         atkDamageBase: document.getElementById("atk-damage-base"),
-        atkDamageMeta: document.getElementById("atk-damage-meta"),
         atkDamageRange: document.getElementById("atk-damage-range"),
-        atkDamageRangeMeta: document.getElementById("atk-damage-range-meta"),
-        healResult: document.getElementById("heal-result"),
-        healMeta: document.getElementById("heal-meta"),
         hitRaw: document.getElementById("hit-raw"),
-        hitRawMeta: document.getElementById("hit-raw-meta"),
       };
 
       function readNumber(input) {
@@ -406,6 +397,11 @@
       function formatNumber(value, digits = 1) {
         if (!Number.isFinite(value)) return "-";
         return value.toFixed(digits);
+      }
+
+      function formatDamage(value) {
+        if (!Number.isFinite(value)) return "-";
+        return String(Math.ceil(value));
       }
 
       function setChipValue(input, value) {
@@ -435,13 +431,10 @@
       }
 
       function calcSkillPower() {
-        const coeff = readNumber(inputs.atkCoeff);
-        if (inputs.atkSourceFixed.checked) {
-          return { value: coeff, meta: "ソース固定のため係数のみ使用" };
-        }
-        const sources = parseNumberList(inputs.atkSource.value);
+        const coeff = readNumber(inputs.skillCoeff);
+        const sources = parseNumberList(inputs.skillSource.value);
         const avgSource = average(sources);
-        const atkConst = getAttackConst(inputs.atkAttr.value);
+        const atkConst = getAttackConst(inputs.skillAttr.value);
         if (atkConst <= 0 || avgSource <= 0) {
           return { value: 0, meta: "ソースか定数が未入力のため0" };
         }
@@ -477,8 +470,8 @@
       }
 
       function calcDefenseConst() {
-        const baseConst = getDefenseConst(inputs.atkAttr.value);
-        const isPhysical = inputs.atkAttr.value === "physical";
+        const baseConst = getDefenseConst(inputs.skillAttr.value);
+        const isPhysical = inputs.skillAttr.value === "physical";
         const hardening = inputs.defHardening.checked;
         const critical = inputs.defCritical.checked;
 
@@ -496,22 +489,46 @@
       function calcDefensePower() {
         const defConst = calcDefenseConst();
         const defense = readNumber(inputs.defValue);
+        const alert = readNumber(inputs.defAlert);
         if (defConst <= 0 || defense <= 0) {
           return { value: 0, meta: "定数または防御が0のため0" };
         }
-        const value = Math.sqrt(defConst * defense);
-        const meta = `定数 ${defConst} × 防御 ${formatNumber(defense, 0)}`;
+        const base = Math.sqrt(defConst * defense);
+        const value = base * (1 - alert / 100);
+        const meta = `定数 ${defConst} × 防御 ${formatNumber(defense, 0)} × 隙 ${formatNumber(
+          100 - alert,
+          1
+        )}%`;
         return { value, meta };
       }
 
-      function calcResAptMultiplier(resist, apt) {
-        const resPct = 100 - resist;
-        const aptPct = 100 + apt;
+      function normalizeProper(value) {
+        if (value <= -100) return -100;
+        if (value > 100) return Math.sqrt(100 * value);
+        return value;
+      }
+
+      function normalizeTolerant(value) {
+        if (value < -100) return -Math.sqrt(-100 * value);
+        return value;
+      }
+
+      function calcResAptMultiplier(resistP, resistA, aptP, aptA) {
+        const tolerantP = normalizeTolerant(resistP);
+        const tolerantA = normalizeTolerant(resistA);
+        const properP = normalizeProper(aptP);
+        const properA = normalizeProper(aptA);
+        const resPctP = 100 - tolerantP;
+        const resPctA = 100 - tolerantA;
+        const aptPctP = 100 + properP;
+        const aptPctA = 100 + properA;
         return {
-          res: resPct / 100,
-          apt: aptPct / 100,
-          resPct,
-          aptPct,
+          res: (resPctP / 100) * (resPctA / 100),
+          apt: (aptPctP / 100) * (aptPctA / 100),
+          resPctP,
+          resPctA,
+          aptPctP,
+          aptPctA,
         };
       }
 
@@ -521,89 +538,122 @@
 
       function updateAttack() {
         const skill = calcSkillPower();
-        outputs.atkSkillPower.textContent = formatNumber(skill.value, 1);
-        outputs.atkSkillMeta.textContent = skill.meta;
-
         const defense = calcDefensePower();
-        outputs.defPower.textContent = formatNumber(defense.value, 1);
-        outputs.defMeta.textContent = defense.meta;
 
-        const resist = readNumber(inputs.atkResist);
-        const apt = readNumber(inputs.atkApt);
-        const ra = calcResAptMultiplier(resist, apt);
-        const other = calcOtherMultiplier(readNumber(inputs.atkBuff));
+        const resistP = readNumber(inputs.skillResistPassive);
+        const resistA = readNumber(inputs.skillResistActive);
+        const aptP = readNumber(inputs.skillAptPassive);
+        const aptA = readNumber(inputs.skillAptActive);
+        const ra = calcResAptMultiplier(resistP, resistA, aptP, aptA);
+        const other = calcOtherMultiplier(readNumber(inputs.skillBuff));
+        const seal = readNumber(inputs.skillSeal);
+        const sealMultiplier = 1 - seal / 10;
 
-        const base = skill.value * ra.res * ra.apt * other - defense.value;
+        const base = skill.value * ra.res * ra.apt * other * sealMultiplier - defense.value;
         const unionReduce = Math.min(10, Math.max(0, readNumber(inputs.unionReduce)));
         const unionMultiplier = 1 - unionReduce / 100;
         const unioned = base * unionMultiplier;
 
-        outputs.atkDamageBase.textContent = formatNumber(unioned, 1);
-        outputs.atkDamageMeta.textContent = `耐性 ${formatNumber(ra.resPct, 1)}% × 適正 ${formatNumber(
-          ra.aptPct,
-          1
-        )}% × その他 ${formatNumber(other * 100, 1)}%`;
+        outputs.atkDamageBase.textContent = formatDamage(unioned);
 
         const minDamage = unioned * RANDOM_MIN;
         const maxDamage = unioned * RANDOM_MAX;
-        outputs.atkDamageRange.textContent = `${formatNumber(minDamage, 1)} ～ ${formatNumber(
-          maxDamage,
-          1
-        )}`;
-        outputs.atkDamageRangeMeta.textContent = `ユニオン補正 ${formatNumber(
-          unionMultiplier * 100,
-          1
-        )}%`;
+        outputs.atkDamageRange.textContent = `${formatDamage(minDamage)} ～ ${formatDamage(maxDamage)}`;
       }
 
       function updateHeal() {
-        const coeff = readNumber(inputs.healCoeff);
-        const source = readNumber(inputs.healSource);
-        const resist = readNumber(inputs.healResist);
-        const apt = readNumber(inputs.healApt);
-        const ra = calcResAptMultiplier(resist, apt);
-        const other = calcOtherMultiplier(readNumber(inputs.healBuff));
+        const coeff = readNumber(inputs.skillCoeff);
+        const sources = parseNumberList(inputs.skillSource.value);
+        const avgSource = average(sources);
+        const resistP = readNumber(inputs.skillResistPassive);
+        const resistA = readNumber(inputs.skillResistActive);
+        const aptP = readNumber(inputs.skillAptPassive);
+        const aptA = readNumber(inputs.skillAptActive);
+        const ra = calcResAptMultiplier(resistP, resistA, aptP, aptA);
+        const other = calcOtherMultiplier(readNumber(inputs.skillBuff));
+        const seal = readNumber(inputs.skillSeal);
+        const sealMultiplier = 1 - seal / 10;
 
-        const base = coeff * Math.sqrt(source * 0.2) * ra.res * ra.apt * other;
-        outputs.healResult.textContent = formatNumber(base, 1);
-        outputs.healMeta.textContent = `耐性 ${formatNumber(ra.resPct, 1)}% × 適正 ${formatNumber(
-          ra.aptPct,
-          1
-        )}% × その他 ${formatNumber(other * 100, 1)}%`;
+        const base = coeff * Math.sqrt(avgSource * 0.2) * ra.res * ra.apt * other * sealMultiplier;
+        outputs.atkDamageBase.textContent = formatDamage(base);
+        outputs.atkDamageRange.textContent = "-";
       }
 
       function updateHit() {
         const skillHit = readNumber(inputs.hitSkill);
         const attackerHit = readNumber(inputs.hitAttacker);
         const defenderAgi = readNumber(inputs.hitDefender);
+        const alert = readNumber(inputs.defAlert);
+        const dizzyAttacker = readNumber(inputs.hitDizzyAttacker);
+        const dizzyDefender = readNumber(inputs.hitDizzyDefender);
         const after = inputs.hitAfter.checked ? 2 : 1;
         const monarch = inputs.hitMonarch.checked ? 1.5 : 1;
 
         const raw =
           70 +
-          Math.sqrt(5) * (skillHit * Math.sqrt(attackerHit) / 100 - Math.sqrt(defenderAgi));
+          Math.sqrt(5) *
+            (skillHit *
+              (1 - dizzyAttacker / 10) *
+              (Math.sqrt(attackerHit) / 100) -
+              (1 - alert / 100) * (1 - dizzyDefender / 10) * Math.sqrt(defenderAgi));
         const corrected = raw * after * monarch;
-        const caps = inputs.hitEye.checked ? { max: 99, min: 10 } : { max: 95, min: 5 };
+        const caps = inputs.hitEye.checked ? { max: 99, min: 30 } : { max: 95, min: 20 };
         const capped = Math.min(caps.max, Math.max(caps.min, corrected));
         const final = Math.floor(capped);
 
-        outputs.hitRaw.textContent = `${formatNumber(corrected, 2)}%`;
-        const atkCalc = Math.sqrt(5) * (skillHit * Math.sqrt(attackerHit) / 100);
-        const defCalc = Math.sqrt(5) * Math.sqrt(defenderAgi);
-        const bonusParts = [];
-        if (inputs.hitAfter.checked) bonusParts.push("後攻+100%");
-        if (inputs.hitMonarch.checked) bonusParts.push("君主+50%");
-        const bonusText = bonusParts.length ? ` × (1 + ${bonusParts.join("+")})` : "";
-        outputs.hitRawMeta.textContent = `70 + 攻撃側 ${formatNumber(
-          atkCalc,
-          2
-        )} / 防御側 ${formatNumber(defCalc, 2)}${bonusText}`;
+        outputs.hitRaw.textContent = `${formatNumber(final, 0)}%`;
       }
 
       function updateAll() {
-        updateAttack();
-        updateHeal();
+        updateModeUI();
+        if (inputs.skillType.value === "attack") {
+          updateAttack();
+        } else {
+          updateHeal();
+        }
         updateHit();
+        saveFormState();
+      }
+
+      function saveFormState() {
+        const state = {};
+        Object.entries(inputs).forEach(([key, input]) => {
+          if (!input) return;
+          state[key] = input.type === "checkbox" ? input.checked : input.value;
+        });
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (error) {
+          // Ignore storage failures (private mode, quota, etc.)
+        }
+      }
+
+      function loadFormState() {
+        let state = null;
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          state = raw ? JSON.parse(raw) : null;
+        } catch (error) {
+          state = null;
+        }
+        if (!state || typeof state !== "object") return;
+        Object.entries(inputs).forEach(([key, input]) => {
+          if (!input || !(key in state)) return;
+          if (input.type === "checkbox") {
+            input.checked = Boolean(state[key]);
+            return;
+          }
+          input.value = String(state[key]);
+        });
+        setChipValue(inputs.skillType, inputs.skillType.value);
+        setChipValue(inputs.skillAttr, inputs.skillAttr.value);
+      }
+
+      function updateModeUI() {
+        const isAttack = inputs.skillType.value === "attack";
+        document.querySelectorAll(".mode-attack").forEach((el) => {
+          el.classList.toggle("is-hidden", !isAttack);
+        });
       }
 
       Object.values(inputs).forEach((input) => {
@@ -625,6 +675,7 @@
         });
       });
 
+      loadFormState();
       updateAll();
     })();
   </script>

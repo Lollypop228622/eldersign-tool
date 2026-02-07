@@ -253,6 +253,126 @@ h1 {
   box-shadow: 0 10px 25px var(--md-sys-shadow);
 }
 
+.form-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.input-row {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 8px 10px;
+  align-items: center;
+}
+
+.input-row label {
+  font-weight: 600;
+  margin: 0;
+}
+
+.input-row input,
+.input-row select {
+  grid-column: 2;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--md-sys-outline-variant);
+  background: var(--md-sys-surface);
+  color: var(--md-sys-on-surface);
+  font-size: 0.95rem;
+}
+
+.input-row input[type="hidden"] {
+  display: none;
+}
+
+.input-row .chip-group {
+  grid-column: 2;
+}
+
+.toggle-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--md-sys-outline-variant);
+  background: var(--md-sys-surface);
+}
+
+.toggle-item input {
+  width: 18px;
+  height: 18px;
+}
+
+.result-card {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--md-sys-surface);
+  border: 1px solid var(--md-sys-outline-variant);
+}
+
+.result-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-label {
+  color: var(--md-sys-on-surface-variant);
+  font-size: 0.9rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.result-value {
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-button {
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  border: 1px solid var(--md-sys-outline-variant);
+  background: var(--md-sys-surface);
+  color: var(--md-sys-on-surface-variant);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.chip-button.is-active {
+  background: color-mix(in srgb, var(--md-sys-primary-container) 70%, var(--md-sys-surface));
+  color: var(--md-sys-on-primary-container);
+  border-color: transparent;
+  box-shadow: 0 6px 12px color-mix(in srgb, var(--md-sys-shadow) 60%, transparent);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--md-sys-on-surface-variant);
+  line-height: 1.6;
+}
+
+.divider {
+  border-top: 1px solid var(--md-sys-outline-variant);
+}
+
+.is-hidden {
+  display: none;
+}
+
 .card-media {
   width: 200px;
   height: 280px;
@@ -421,5 +541,9 @@ footer {
 
   .card {
     min-height: auto;
+  }
+
+  .input-row {
+    grid-template-columns: 110px minmax(0, 1fr);
   }
 }

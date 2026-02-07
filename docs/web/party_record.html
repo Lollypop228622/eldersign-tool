@@ -564,6 +564,7 @@
     </section>
   </template>
 
+  <script src="./party_record_legacy_storage.js" defer></script>
   <script type="module">
     import {
       firebaseEnv,
@@ -582,8 +583,6 @@
       const DEFAULT_SLOT_COUNT = 4;
       const SKILL_COUNT = 5;
       const DEFAULT_PARTY_COUNT = 4;
-      const LOCAL_CACHE_KEY_BASE = "eldersign_party_record_cache_v2";
-      const LEGACY_KEY = "eldersign_party_record_v1";
       const FIRESTORE_COLLECTION = "partyRecords";
       const SAVE_DELAY_MS = 600;
 
@@ -652,47 +651,51 @@
         };
       };
 
-      const getCacheKey = (uid) => `${LOCAL_CACHE_KEY_BASE}_${uid || "anonymous"}`;
+      const isStoreEmpty = (store) => {
+        if (!store) return true;
+        const partyNames = store.partyNames || {};
+        if (Object.values(partyNames).some((name) => normalizeText(name))) {
+          return false;
+        }
+        const parties = store.parties || {};
+        return !Object.values(parties).some((entries) =>
+          Array.isArray(entries) &&
+          entries.some((entry) => {
+            if (!entry) return false;
+            if (normalizeText(entry.name)) return true;
+            if (normalizeText(entry.imageUrl)) return true;
+            if (Array.isArray(entry.skills) && entry.skills.some((skill) => normalizeText(skill))) {
+              return true;
+            }
+            return false;
+          })
+        );
+      };
 
       const readLocalCache = (uid) => {
-        try {
-          const raw = localStorage.getItem(getCacheKey(uid));
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (parsed && typeof parsed === "object") {
-              return normalizeStore(parsed);
-            }
-          }
-
-          const legacyRaw = localStorage.getItem(LEGACY_KEY);
-          if (legacyRaw) {
-            const legacyParsed = JSON.parse(legacyRaw);
-            if (Array.isArray(legacyParsed)) {
-              return normalizeStore({
-                activeParty: 1,
-                parties: { 1: buildParty(legacyParsed) },
-                partyCount: DEFAULT_PARTY_COUNT,
-                partyNames: {},
-              });
-            }
-          }
-        } catch (error) {
-          return null;
-        }
-        return null;
+        if (!window.EldersignLegacyStorage) return null;
+        return window.EldersignLegacyStorage.readLegacyStore(uid, {
+          normalizeStore,
+          buildParty,
+          defaultPartyCount: DEFAULT_PARTY_COUNT,
+        });
       };
 
       const loadStore = async (uid) => {
+        const localStore = readLocalCache(uid);
         try {
           const payload = await loadFirestoreDoc([FIRESTORE_COLLECTION, uid]);
           if (payload && payload.store) {
-            return { store: normalizeStore(payload.store), source: "firestore" };
+            const normalized = normalizeStore(payload.store);
+            if (localStore && isStoreEmpty(normalized) && !isStoreEmpty(localStore)) {
+              return { store: localStore, source: "local" };
+            }
+            return { store: normalized, source: "firestore" };
           }
         } catch (error) {
           setStatus("Firestoreの読み込みに失敗しました。ローカルを使用します。");
         }
 
-        const localStore = readLocalCache(uid);
         if (localStore) return { store: localStore, source: "local" };
 
         return { store: buildDefaultStore(), source: "default" };
@@ -701,10 +704,8 @@
       let saveTimer = null;
 
       const saveStore = (store, { immediate = false } = {}) => {
-        try {
-          localStorage.setItem(getCacheKey(currentUid), JSON.stringify(store));
-        } catch (error) {
-          // ignore cache errors
+        if (window.EldersignLegacyStorage) {
+          window.EldersignLegacyStorage.writeLegacyCache(currentUid, store);
         }
 
         if (saveTimer) {

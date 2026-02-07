@@ -36,3 +36,4 @@ javascript:(()=>{const s=document.createElement("script");s.src="https://yuki-ka
 - `docs/*.js` は自己完結のIIFE形式を維持し、ビルドや外部依存を追加しない。
 - 対象はブラウザ内実行（DOM 操作 / fetch 等）なので Node 専用 API は使わない。
 - UI 追加は既存のスタイルに合わせ、ページ破壊を避けるために `z-index` や固定配置を配慮する。
+- `.js` を別ファイルから読み込む場合、対象ファイルに実際の更新があったときのみ `?v1` のようなクエリ末尾をインクリメントして更新を明示する。

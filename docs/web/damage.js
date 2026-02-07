@@ -1,4 +1,34 @@
 (() => {
+  const common = window.EldersignToolCommon || {};
+  const readNumber = common.readNumber || ((input, fallback = 0) => {
+    const value = Number(input && input.value);
+    return Number.isFinite(value) ? value : fallback;
+  });
+  const setChipValue = common.setChipValue || ((input, value) => {
+    if (!input || value == null) return;
+    const stringValue = String(value);
+    input.value = stringValue;
+    const group = document.querySelector(`.chip-group[data-chip-target="${input.id}"]`);
+    if (!group) return;
+    group.querySelectorAll(".chip-button").forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.value === stringValue);
+    });
+  });
+  const bindChipGroups = common.bindChipGroups || ((onChange) => {
+    document.querySelectorAll(".chip-group").forEach((group) => {
+      group.addEventListener("click", (event) => {
+        const button = event.target.closest(".chip-button");
+        if (!button || !group.contains(button)) return;
+        const targetId = group.dataset.chipTarget;
+        if (!targetId) return;
+        const input = document.getElementById(targetId);
+        if (!input) return;
+        setChipValue(input, button.dataset.value);
+        if (typeof onChange === "function") onChange(input, button.dataset.value, group);
+      });
+    });
+  });
+
   const RANDOM_MIN = 0.875;
   const RANDOM_MAX = 1.125;
   const STORAGE_KEY = "eldersign_damage_form_v1";
@@ -55,21 +85,19 @@
     resultDetailPanel: document.getElementById("result-detail-panel"),
   };
 
-  function readNumber(input) {
-    const value = Number(input.value);
-    return Number.isFinite(value) ? value : 0;
-  }
-
+  // 数値表示用の共通フォーマッタ。非数は "-" で返す。
   function formatNumber(value, digits = 1) {
     if (!Number.isFinite(value)) return "-";
     return value.toFixed(digits);
   }
 
+  // ダメージ表示用フォーマッタ。小数は切り上げて整数表示する。
   function formatDamage(value) {
     if (!Number.isFinite(value)) return "-";
     return String(Math.ceil(value));
   }
 
+  // 入力されたソース値群を分解して平均値を返す。
   function parseSourceAverage(text) {
     if (!text) return 0;
     const values = text
@@ -81,36 +109,30 @@
     return sum / values.length;
   }
 
+  // 属性から攻撃定数を引く。
   function getAttackConst(attr) {
     return ATTACK_CONST_BY_ATTR[attr] ?? 0;
   }
 
+  // 属性から防御定数を引く。
   function getDefenseConst(attr) {
     return DEFENSE_CONST_BY_ATTR[attr] ?? 0;
   }
 
-  function setChipValue(input, value) {
-    if (!input || value == null) return;
-    const stringValue = String(value);
-    input.value = stringValue;
-    const group = document.querySelector(`.chip-group[data-chip-target="${input.id}"]`);
-    if (!group) return;
-    group.querySelectorAll(".chip-button").forEach((button) => {
-      button.classList.toggle("is-active", button.dataset.value === stringValue);
-    });
-  }
-
+  // 適正値の上限・下限ルールを適用する。
   function normalizeProper(value) {
     if (value <= -100) return -100;
     if (value > 100) return Math.sqrt(100 * value);
     return value;
   }
 
+  // 耐性値の下限ルールを適用する。
   function normalizeTolerant(value) {
     if (value < -100) return -Math.sqrt(-100 * value);
     return value;
   }
 
+  // 耐性・適正の補正率と表示用の中間値をまとめて計算する。
   function calcResAptMultiplier() {
     const tolerantP = normalizeTolerant(readNumber(inputs.skillResistPassive));
     const tolerantA = normalizeTolerant(readNumber(inputs.skillResistActive));
@@ -132,14 +154,17 @@
     };
   }
 
+  // 強化率を乗算係数へ変換する。
   function calcBuffMultiplier() {
     return 1 + readNumber(inputs.skillBuff) / 100;
   }
 
+  // 封技/封術Lvを乗算係数へ変換する。
   function calcSealMultiplier() {
     return 1 - readNumber(inputs.skillSeal) / 10;
   }
 
+  // 補正内訳の表示文字列を組み立てる。
   function formatResAptMeta(ra, sealMultiplier, buffMultiplier) {
     return `耐性${formatNumber(ra.resPctP, 1)}%×${formatNumber(ra.resPctA, 1)}% 適正${formatNumber(
       ra.aptPctP,
@@ -150,6 +175,7 @@
     )}%`;
   }
 
+  // 攻撃時のスキル強度を算出する。
   function calcSkillPower() {
     const coeff = readNumber(inputs.skillCoeff);
     const averageSource = parseSourceAverage(inputs.skillSource.value);
@@ -158,6 +184,7 @@
     return coeff * Math.sqrt(averageSource / attackConst);
   }
 
+  // 属性・硬化・クリティカル状態から防御定数を決定する。
   function calcDefenseConstant() {
     const attr = inputs.skillAttr.value;
     const isPhysical = attr === "physical";
@@ -175,6 +202,7 @@
     return getDefenseConst(attr);
   }
 
+  // 防御力と隙を加味した防御強度を算出する。
   function calcDefensePower() {
     const defenseConst = calcDefenseConstant();
     const defense = readNumber(inputs.defValue);
@@ -183,6 +211,7 @@
     return Math.sqrt(defenseConst * defense) * (1 - alert / 100);
   }
 
+  // 攻撃モードの結果表示を更新する。
   function updateAttack() {
     const skillPower = calcSkillPower();
     const defensePower = calcDefensePower();
@@ -207,6 +236,7 @@
     outputs.detailHealMeta.textContent = "-";
   }
 
+  // 回復/付与モードの結果表示を更新する。
   function updateHeal() {
     const coeff = readNumber(inputs.skillCoeff);
     const averageSource = parseSourceAverage(inputs.skillSource.value);
@@ -231,6 +261,7 @@
     outputs.detailHealMeta.textContent = formatResAptMeta(ra, sealMultiplier, buffMultiplier);
   }
 
+  // 命中率の計算と表示を更新する。
   function updateHit() {
     const skillHit = readNumber(inputs.hitSkill);
     const attackerHit = readNumber(inputs.hitAttacker);
@@ -257,6 +288,7 @@
     )}`;
   }
 
+  // モードに応じて攻撃/回復専用UIの表示を切り替える。
   function updateModeUI() {
     const isAttackMode = inputs.skillType.value === "attack";
     document.querySelectorAll(".mode-attack").forEach((element) => {
@@ -267,16 +299,19 @@
     });
   }
 
+  // 詳細パネルの開閉状態とARIA属性を同期する。
   function setResultDetailOpen(open) {
     outputs.resultDetailPanel.classList.toggle("is-hidden", !open);
     outputs.resultSummary.setAttribute("aria-expanded", open ? "true" : "false");
   }
 
+  // 詳細パネル開閉をトグルする。
   function toggleResultDetailOpen() {
     const isOpen = !outputs.resultDetailPanel.classList.contains("is-hidden");
     setResultDetailOpen(!isOpen);
   }
 
+  // フォーム状態をlocalStorageへ保存する。
   function saveFormState() {
     const state = {};
     Object.entries(inputs).forEach(([key, input]) => {
@@ -290,6 +325,7 @@
     }
   }
 
+  // 保存済みフォーム状態を復元する。
   function loadFormState() {
     let state = null;
     try {
@@ -313,6 +349,7 @@
     setChipValue(inputs.skillAttr, inputs.skillAttr.value);
   }
 
+  // 画面全体の再計算・再描画を行う。
   function updateAll() {
     updateModeUI();
     if (inputs.skillType.value === "attack") {
@@ -330,17 +367,8 @@
     input.addEventListener(eventName, updateAll);
   });
 
-  document.querySelectorAll(".chip-group").forEach((group) => {
-    group.addEventListener("click", (event) => {
-      const button = event.target.closest(".chip-button");
-      if (!button || !group.contains(button)) return;
-      const targetId = group.dataset.chipTarget;
-      if (!targetId) return;
-      const input = document.getElementById(targetId);
-      if (!input) return;
-      setChipValue(input, button.dataset.value);
-      updateAll();
-    });
+  bindChipGroups(() => {
+    updateAll();
   });
 
   outputs.resultSummary.addEventListener("click", toggleResultDetailOpen);

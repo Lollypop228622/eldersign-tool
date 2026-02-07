@@ -11,15 +11,18 @@
       const inputs = {};
       const pctEls = {};
 
+      // 要素IDから対象DOMを取得する。
       function getInput(id) {
         return document.getElementById(id);
       }
 
+      // input値を数値として安全に読み取る。
       function readNumber(input) {
         const v = Number(input.value);
         return Number.isFinite(v) ? v : 0;
       }
 
+      // 評価値をグレード表記へ変換する。
       function calcGradeLabel(evalValue) {
         if (evalValue == null) return "-";
         if (evalValue < 10) return "-";
@@ -35,12 +38,14 @@
         return "SSS";
       }
 
+      // 比率二乗和から評価値を算出する。
       function calcEvalFromSumSq(sumSq) {
         const raw = Math.sqrt(sumSq / 6) * 200 + 10;
         if (!Number.isFinite(raw)) return null;
         return raw;
       }
 
+      // 各ステータスの個体値比率二乗和を計算する。
       function calcSumSq(stats) {
         let sumSq = 0;
         for (const stat of stats) {
@@ -52,6 +57,7 @@
         return sumSq;
       }
 
+      // 指定ステータスのみ伸ばした場合に目標評価へ届く最小個体値を探索する。
       function findMinBonus(stats, targetEval, targetKey) {
         const target = stats.find((stat) => stat.key === targetKey);
         if (!target || target.base <= 0) return null;
@@ -79,6 +85,7 @@
         return null;
       }
 
+      // 目標評価に必要な個体値一覧を描画する。
       function renderNeedList(listEl, stats, targetEval, isInteractive) {
         listEl.innerHTML = "";
         const items = [];
@@ -137,6 +144,7 @@
         }
       }
 
+      // 入力値から評価結果・割合表示・必要個体値一覧を更新する。
       function updateResult() {
         const stats = STAT_KEYS.map((stat) => ({
           key: stat.key,
@@ -183,6 +191,7 @@
         renderNeedList(getInput("sss-grade-list"), stats, 100, false);
       }
 
+      // 入力イベントとDOM参照を初期化する。
       function bindInputs() {
         const targets = [
           getInput("monster-name"),

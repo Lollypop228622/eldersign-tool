@@ -1,4 +1,35 @@
 (() => {
+      const common = window.EldersignToolCommon || {};
+      const readNumber = common.readNumber || ((input, fallback = 0) => {
+        const value = Number(input && input.value);
+        return Number.isFinite(value) ? value : fallback;
+      });
+      const setChipValue = common.setChipValue || ((input, value) => {
+        if (!input || value == null) return;
+        const strValue = String(value);
+        input.value = strValue;
+        const group = document.querySelector(`.chip-group[data-chip-target="${input.id}"]`);
+        if (!group) return;
+        group.querySelectorAll(".chip-button").forEach((button) => {
+          const isActive = button.dataset.value === strValue;
+          button.classList.toggle("is-active", isActive);
+        });
+      });
+      const bindChipGroups = common.bindChipGroups || ((onChange) => {
+        document.querySelectorAll(".chip-group").forEach((group) => {
+          group.addEventListener("click", (event) => {
+            const button = event.target.closest(".chip-button");
+            if (!button || !group.contains(button)) return;
+            const targetId = group.dataset.chipTarget;
+            if (!targetId) return;
+            const input = document.getElementById(targetId);
+            if (!input) return;
+            setChipValue(input, button.dataset.value);
+            if (typeof onChange === "function") onChange(input, button.dataset.value, group);
+          });
+        });
+      });
+
       const STORAGE_KEY = "eldersign_skill_inherit_bonus";
       const inputs = {
         familyMatch: document.getElementById("family-match"),
@@ -21,15 +52,12 @@
         appearanceMeta: document.getElementById("appearance-meta"),
       };
 
-      function readNumber(input) {
-        const value = Number(input.value);
-        return Number.isFinite(value) ? value : 0;
-      }
-
+      // 小数1桁で切り捨てる。
       function truncate1(value) {
         return Math.trunc(value * 10) / 10;
       }
 
+      // Lv選択用のselect要素を生成する。
       function buildSkillSelect(value) {
         const select = document.createElement("select");
         for (let i = 1; i <= 10; i += 1) {
@@ -42,6 +70,7 @@
         return select;
       }
 
+      // スキル名入力とLv選択・削除ボタンを持つ1行を生成する。
       function createSkillRow(initialValue, nameValue) {
         const row = document.createElement("div");
         row.className = "repeat-row";
@@ -64,6 +93,7 @@
         return { row, nameInput, select, remove };
       }
 
+      // スキル行を追加し、必要なイベントを紐付ける。
       function appendSkillRow(container, initialValue, nameValue) {
         const { row, nameInput, select, remove } = createSkillRow(initialValue, nameValue);
         container.appendChild(row);
@@ -77,10 +107,14 @@
         return row;
       }
 
-      function ensureMinRow() {
-        return;
+      // 行が0件になったとき最低1行を補充する。
+      function ensureMinRow(container) {
+        if (!container) return;
+        if (container.querySelector(".repeat-row")) return;
+        appendSkillRow(container, 1, "");
       }
 
+      // 入力行からスキル名とLvの配列を抽出する。
       function getSkillEntries(container) {
         const entries = [];
         container.querySelectorAll(".repeat-row").forEach((row) => {
@@ -95,6 +129,7 @@
         return entries;
       }
 
+      // レアリティによる固定補正値を返す。
       function calcAlpha(rarity) {
         switch (rarity) {
           case "bronze":
@@ -106,6 +141,7 @@
         }
       }
 
+      // 各種チェック状態から合計補正値を計算する。
       function calcBonus() {
         let bonus = 0;
         if (inputs.bonusSilver.checked) bonus += 5;
@@ -114,6 +150,7 @@
         return bonus;
       }
 
+      // 補正チェック状態をlocalStorageから復元する。
       function loadBonusSettings() {
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
@@ -134,6 +171,7 @@
         }
       }
 
+      // URLパラメータの真偽値表現をbooleanへ変換する。
       function parseBooleanParam(value) {
         if (value == null) return null;
         if (value === "1" || value === "true") return true;
@@ -141,6 +179,7 @@
         return null;
       }
 
+      // カンマ区切り文字列をスキル名配列へ変換する。
       function parseNameList(value) {
         if (!value) return [];
         return value
@@ -149,25 +188,7 @@
           .filter((name) => name.length > 0);
       }
 
-      function setChipValue(input, value) {
-        if (!input || value == null) return;
-        const strValue = String(value);
-        input.value = strValue;
-        const group = document.querySelector(`.chip-group[data-chip-target="${input.id}"]`);
-        if (!group) return;
-        group.querySelectorAll(".chip-button").forEach((button) => {
-          const isActive = button.dataset.value === strValue;
-          button.classList.toggle("is-active", isActive);
-        });
-      }
-
-      function setSelectValue(select, value) {
-        if (!select || value == null) return;
-        const strValue = String(value);
-        const hasOption = [...select.options].some((opt) => opt.value === strValue);
-        if (hasOption) select.value = strValue;
-      }
-
+      // 指定コンテナへスキル行一覧を再構築する。
       function setSkillList(container, entries) {
         container.innerHTML = "";
         const list = entries.length > 0 ? entries : [{ level: 1, name: "" }];
@@ -176,6 +197,7 @@
         });
       }
 
+      // URLパラメータから画面入力を復元する。
       function applyParams(params) {
         if (!params) return;
 
@@ -235,6 +257,7 @@
         if (lamp != null) inputs.bonusLamp.checked = lamp;
       }
 
+      // 補正チェック状態をlocalStorageへ保存する。
       function saveBonusSettings() {
         const payload = {
           silver: inputs.bonusSilver.checked,
@@ -248,6 +271,7 @@
         }
       }
 
+      // 継承率の基礎値（補正前）を算出する。
       function calcInheritBase(isSameFamily, isLatent, skillLv, alpha) {
         if (skillLv <= 0) return null;
         if (isSameFamily) {
@@ -256,11 +280,13 @@
         return (isLatent ? 5 : 9) * skillLv + alpha;
       }
 
+      // 率表示を%文字列に整形する。
       function formatRate(value) {
         if (value == null) return "-";
         return `${value.toFixed(1)}%`;
       }
 
+      // 通常/潜在スキルの計算結果一覧を描画する。
       function renderSkillResults(listEl, entries, baseCoeff, alpha, bonus, isSameFamily, isLatent) {
         listEl.innerHTML = "";
         if (entries.length === 0) {
@@ -293,6 +319,7 @@
         });
       }
 
+      // 継承率・発現率・早見表ハイライトをまとめて更新する。
       function updateResult() {
         const isSameFamily = inputs.familyMatch.value === "same";
         const alpha = calcAlpha(inputs.rarity.value);
@@ -353,17 +380,8 @@
         input.addEventListener("change", updateResult);
       });
 
-      document.querySelectorAll(".chip-group").forEach((group) => {
-        group.addEventListener("click", (event) => {
-          const button = event.target.closest(".chip-button");
-          if (!button || !group.contains(button)) return;
-          const targetId = group.dataset.chipTarget;
-          if (!targetId) return;
-          const input = document.getElementById(targetId);
-          if (!input) return;
-          setChipValue(input, button.dataset.value);
-          updateResult();
-        });
+      bindChipGroups(() => {
+        updateResult();
       });
 
       [inputs.bonusSilver, inputs.bonusBoost, inputs.bonusLamp].forEach((input) => {

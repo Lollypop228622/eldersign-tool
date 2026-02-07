@@ -48,6 +48,15 @@
       gap: 8px;
     }
 
+    .result-detail-panel .result-row {
+      grid-template-columns: minmax(6.8em, 30%) minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .result-detail-panel .result-label {
+      white-space: nowrap;
+    }
+
     .result-divider {
       margin-top: 6px;
       padding-top: 8px;
@@ -57,6 +66,9 @@
       font-size: 0.95rem;
       font-weight: 700;
       text-align: right;
+      overflow-wrap: anywhere;
+      word-break: normal;
+      line-height: 1.35;
     }
 
     .chip-button[data-value="physical"] {
@@ -136,6 +148,10 @@
     @media (max-width: 640px) {
       .formula-table th {
         width: 120px;
+      }
+
+      .result-detail-panel .result-row {
+        grid-template-columns: minmax(6.2em, 34%) minmax(0, 1fr);
       }
     }
 

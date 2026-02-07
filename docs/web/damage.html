@@ -185,9 +185,50 @@
       display: none;
     }
 
+    .formula-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--md-sys-outline-variant);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--md-sys-surface);
+    }
+
+    .formula-table th,
+    .formula-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--md-sys-outline-variant);
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .formula-table tr:last-child th,
+    .formula-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .formula-table th {
+      width: 180px;
+      color: var(--md-sys-on-surface-variant);
+      font-weight: 600;
+      background: color-mix(in srgb, var(--md-sys-surface) 90%, var(--md-sys-primary-container));
+    }
+
+    .formula-note {
+      margin: 8px 0 0;
+      color: var(--md-sys-on-surface-variant);
+      font-size: 0.88rem;
+    }
+
     @media (max-width: 640px) {
       .input-row {
         grid-template-columns: 110px minmax(0, 1fr);
+      }
+
+      .formula-table th {
+        width: 120px;
       }
     }
 
@@ -345,9 +386,64 @@
           </label>
         </div>
       </div>
-      <p class="hint">
-        耐性補正=(100-耐性(P))% × (100-耐性(A))%、適正補正=(100+適正(P))% × (100+適正(A))%。
-      </p>
+    </section>
+
+    <section class="reveal">
+      <div class="section-title">
+        <h2>計算式</h2>
+        <span>要検証</span>
+      </div>
+      <article class="card no-hover">
+        <table class="formula-table">
+          <tbody>
+            <tr>
+              <th>スキル強度</th>
+              <td>`係数 × √(ソース平均 / 属性定数)`</td>
+            </tr>
+            <tr>
+              <th>属性定数</th>
+              <td>`物理=5 / 炎冷=9 / 虚軸=20`</td>
+            </tr>
+            <tr>
+              <th>防御定数</th>
+              <td>`通常: 物理500 / 炎冷120 / 虚軸10`<br>`硬化Lv10: 物理2000 / 炎冷0 / 虚軸0`<br>`クリティカル時: 物理(硬化あり500・なし0) / 炎冷0 / 虚軸0`</td>
+            </tr>
+            <tr>
+              <th>防御強度</th>
+              <td>`√(防御定数 × 防御) × (1 - 隙/100)`</td>
+            </tr>
+            <tr>
+              <th>適正/耐性補正</th>
+              <td>`耐性補正 = ((100-耐性P')/100) × ((100-耐性A')/100)`<br>`適正補正 = ((100+適正P')/100) × ((100+適正A')/100)`</td>
+            </tr>
+            <tr>
+              <th>正規化</th>
+              <td>`適正': <=-100 は -100、>100 は √(100×値)`<br>`耐性': <-100 は -√(-100×値)`</td>
+            </tr>
+            <tr>
+              <th>ダメージ(乱数前)</th>
+              <td>`(スキル強度 × 耐性補正 × 適正補正 × (1+強化/100) × (1-封技封術/10) - 防御強度) × (1-ユニオン/100)`</td>
+            </tr>
+            <tr>
+              <th>乱数範囲</th>
+              <td>`最小 = ダメージ×0.875 / 最大 = ダメージ×1.125`（表示は切り上げ）</td>
+            </tr>
+            <tr>
+              <th>付与・回復</th>
+              <td>`係数 × √(ソース平均×0.2) × 耐性補正 × 適正補正 × (1+強化/100) × (1-封技封術/10)`（表示は切り上げ）</td>
+            </tr>
+            <tr>
+              <th>命中率</th>
+              <td>`raw = 70 + √5 × (スキル命中×(1-眩暈攻/10)×√攻命/100 - (1-隙/100)×(1-眩暈防/10)×√防敏)`<br>`補正後命中率 = raw × 後攻補正 × 君主補正`<br>`神眼あり: 30〜99 / なし: 20〜95 で丸め、最後に切り捨て`</td>
+            </tr>
+            <tr>
+              <th>命中補正定数</th>
+              <td>`後攻補正: 後攻なら2 / 通常なら1`<br>`君主補正: ありなら1.5 / なしなら1`</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="formula-note">付与でP適正とA適正両方がある場合など計算が合わないケースがあります。情報募集中</p>
+      </article>
     </section>
   </main>
 
@@ -601,7 +697,7 @@
         const capped = Math.min(caps.max, Math.max(caps.min, corrected));
         const final = Math.floor(capped);
 
-        outputs.hitRaw.textContent = `${formatNumber(final, 0)}%`;
+        outputs.hitRaw.textContent = `${formatNumber(final, 0)}%(${formatNumber(corrected, 2)}%)`;
       }
 
       function updateAll() {

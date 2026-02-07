@@ -1,6 +1,6 @@
 (() => {
   const LOCAL_CACHE_KEY_BASE = "eldersign_party_record_cache_v2";
-  const LEGACY_KEY = "eldersign_party_record_v1";
+  const LEGACY_KEY = "eldersign_party_record_v2";
 
   const getCacheKey = (uid) => `${LOCAL_CACHE_KEY_BASE}_${uid || "anonymous"}`;
 

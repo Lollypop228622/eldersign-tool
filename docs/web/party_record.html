@@ -145,6 +145,30 @@
     .party-section {
       display: grid;
       gap: 12px;
+      padding: 18px 20px 16px;
+      overflow: hidden;
+      min-height: auto;
+    }
+
+    .party-section.is-collapsed {
+      gap: 0;
+      padding: 6px 10px;
+    }
+
+    .party-section.is-collapsed .party-grid {
+      display: none;
+    }
+
+    .party-section.is-collapsed [data-action="add"] {
+      display: none;
+    }
+
+    .party-section.is-collapsed .party-header {
+      gap: 6px;
+    }
+
+    .party-section.is-collapsed .party-actions {
+      gap: 4px;
     }
 
     .party-header {
@@ -153,6 +177,7 @@
       justify-content: space-between;
       gap: 12px;
       flex-wrap: wrap;
+      cursor: pointer;
     }
 
     .party-title {
@@ -176,6 +201,34 @@
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
+    }
+
+    .party-section.is-collapsed .party-name {
+      padding: 4px 10px;
+    }
+
+    .party-section.is-collapsed .icon-button {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      border-radius: 10px;
+      padding: 0;
+    }
+
+    .party-section.is-collapsed .party-toggle-button {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      border-radius: 10px;
+      padding: 0;
+    }
+
+    .party-toggle-icon {
+      transition: transform 0.2s ease;
+    }
+
+    .party-section:not(.is-collapsed) .party-toggle-icon {
+      transform: rotate(180deg);
     }
 
     .party-grid {
@@ -548,8 +601,8 @@
   </template>
 
   <template id="party-template">
-    <section class="party-section">
-      <div class="party-header">
+    <section class="party-section card">
+      <div class="party-header" role="button" tabindex="0" aria-expanded="true">
         <input class="party-name" type="text" placeholder="PT名" />
         <div class="party-actions">
           <button class="icon-button" type="button" data-action="add" aria-label="枠を追加">
@@ -558,6 +611,9 @@
           <button class="icon-button" type="button" data-action="clear" aria-label="このPTを全消去">
             <span class="material-symbols-outlined" aria-hidden="true">delete</span>
           </button>
+          <button class="icon-button party-toggle-button" type="button" data-action="toggle" aria-label="開閉">
+            <span class="material-symbols-outlined party-toggle-icon" aria-hidden="true">expand_more</span>
+          </button>
         </div>
       </div>
       <div class="party-grid"></div>
@@ -565,7 +621,7 @@
   </template>
 
   <script src="./party_record_legacy_storage.js?v2" defer></script>
-  <script type="module" src="./party_record.js?v1"></script>
+  <script type="module" src="./party_record.js?v3"></script>
   <script src="../footer.js" defer></script>
 </body>
 

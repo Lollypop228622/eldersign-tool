@@ -712,13 +712,46 @@ import {
           const entries = getPartyEntries(partyId);
           const clone = partyTemplate.content.cloneNode(true);
           const section = clone.querySelector(".party-section");
+          const header = clone.querySelector(".party-header");
           const nameInput = clone.querySelector(".party-name");
           const grid = clone.querySelector(".party-grid");
+          const toggleButton = clone.querySelector('[data-action="toggle"]');
           const actions = clone.querySelectorAll("[data-action]");
-          if (section) section.dataset.party = String(partyId);
+          const defaultPartyName = `PT ${partyId}`;
+          if (section) {
+            section.dataset.party = String(partyId);
+            section.classList.remove("is-collapsed");
+          }
+          if (header) {
+            header.setAttribute("aria-expanded", "true");
+            const toggleSection = () => {
+              if (!section) return;
+              const nextCollapsed = !section.classList.contains("is-collapsed");
+              section.classList.toggle("is-collapsed", nextCollapsed);
+              header.setAttribute("aria-expanded", nextCollapsed ? "false" : "true");
+            };
+            header.addEventListener("click", (event) => {
+              if (event.target.closest("input")) return;
+              toggleSection();
+            });
+            header.addEventListener("keydown", (event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              if (event.target.closest("input")) return;
+              event.preventDefault();
+              toggleSection();
+            });
+            if (toggleButton) {
+              toggleButton.addEventListener("click", (event) => {
+                event.stopPropagation();
+                toggleSection();
+              });
+            }
+          }
           if (nameInput) {
-            nameInput.placeholder = `PT ${partyId}`;
+            nameInput.placeholder = defaultPartyName;
             nameInput.value = store.partyNames[String(partyId)] || "";
+            nameInput.addEventListener("click", (event) => event.stopPropagation());
+            nameInput.addEventListener("keydown", (event) => event.stopPropagation());
             nameInput.addEventListener("input", () => {
               store.partyNames[String(partyId)] = nameInput.value.trim();
               saveStore(store);
@@ -726,6 +759,9 @@ import {
           }
           actions.forEach((button) => {
             button.dataset.party = String(partyId);
+            button.addEventListener("click", (event) => {
+              event.stopPropagation();
+            });
             const action = button.dataset.action;
             if (action === "add") {
               button.addEventListener("click", () => {

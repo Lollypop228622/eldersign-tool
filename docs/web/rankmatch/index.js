@@ -279,16 +279,25 @@ let PHASES = [];
         if (currentPhase) renderPhase(currentPhase);
       };
 
+      const normalizeSearchText = (value) => {
+        return String(value || "")
+          .normalize("NFKC")
+          .toLowerCase()
+          .replace(/[\u30a1-\u30f6]/g, (char) =>
+            String.fromCharCode(char.charCodeAt(0) - 0x60)
+          );
+      };
+
       const rowMatchesQuery = (row, query) => {
         if (!query) return true;
-        const q = query.toLowerCase();
+        const q = normalizeSearchText(query);
         const fields = [
           row.monster,
           row.image,
           row["A(アクティブ)"],
           row["P(コンパニオン)"],
         ];
-        return fields.some((value) => String(value || "").toLowerCase().includes(q));
+        return fields.some((value) => normalizeSearchText(value).includes(q));
       };
 
       const buildGroupCard = async (groupLabel, csvPath, query) => {

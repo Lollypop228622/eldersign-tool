@@ -13,7 +13,7 @@ import {
 
     (async () => {
       const DEFAULT_SLOT_COUNT = 4;
-      const SKILL_COUNT = 5;
+      const SKILL_COUNT = 6;
       const DEFAULT_PARTY_COUNT = 4;
       const FIRESTORE_COLLECTION = "partyRecords";
       const SAVE_DELAY_MS = 600;
@@ -317,6 +317,11 @@ import {
           skills = skillList;
         }
 
+        const skillZero = normalizeText(params.get("skill0"));
+        if (skillZero) {
+          skills.push(skillZero);
+        }
+
         for (let i = 1; i <= SKILL_COUNT; i += 1) {
           const skillValue = normalizeText(params.get(`skill${i}`));
           if (skillValue) skills.push(skillValue);
@@ -458,6 +463,39 @@ import {
         renderAll();
       };
 
+      const reorderParties = (fromPartyId, toPartyId) => {
+        const fromId = clampParty(fromPartyId);
+        const toId = clampParty(toPartyId);
+        if (fromId === toId) return false;
+
+        const ordered = [];
+        for (let id = 1; id <= store.partyCount; id += 1) {
+          ordered.push({
+            id,
+            entries: getPartyEntries(id).map((entry) => normalizeEntry(entry)),
+            name: store.partyNames[String(id)] || "",
+          });
+        }
+
+        const fromIndex = fromId - 1;
+        const toIndex = toId - 1;
+        const [moved] = ordered.splice(fromIndex, 1);
+        if (!moved) return false;
+        ordered.splice(toIndex, 0, moved);
+
+        store.parties = {};
+        store.partyNames = {};
+        ordered.forEach((party, index) => {
+          const nextId = index + 1;
+          store.parties[nextId] = party.entries;
+          if (party.name) {
+            store.partyNames[String(nextId)] = party.name;
+          }
+        });
+        store.partyCount = ordered.length;
+        return true;
+      };
+
       const addSlot = (partyId) => {
         const entries = getPartyEntries(partyId);
         entries.push(defaultEntry());
@@ -558,7 +596,6 @@ import {
         const previewImage = clone.querySelector(".slot-image");
         const skillRows = [...clone.querySelectorAll(".skill-row")];
         const skillInputs = [...clone.querySelectorAll(".slot-skill")];
-        const skillDrags = [...clone.querySelectorAll(".skill-drag")];
 
         nameInput.dataset.party = String(partyId);
         nameInput.dataset.slot = String(index);
@@ -654,7 +691,10 @@ import {
           row.dataset.party = String(partyId);
           row.dataset.slot = String(index);
           row.dataset.skillIndex = String(skillIndex);
-          const handle = skillDrags[skillIndex];
+          const handle = row.querySelector(".skill-drag");
+          if (!handle) {
+            return;
+          }
           handle.dataset.party = String(partyId);
           handle.dataset.slot = String(index);
           handle.dataset.skillIndex = String(skillIndex);
@@ -712,13 +752,90 @@ import {
           const entries = getPartyEntries(partyId);
           const clone = partyTemplate.content.cloneNode(true);
           const section = clone.querySelector(".party-section");
+          const header = clone.querySelector(".party-header");
           const nameInput = clone.querySelector(".party-name");
           const grid = clone.querySelector(".party-grid");
+          const toggleButton = clone.querySelector('[data-action="toggle"]');
           const actions = clone.querySelectorAll("[data-action]");
-          if (section) section.dataset.party = String(partyId);
+          const defaultPartyName = `PT ${partyId}`;
+          if (section) {
+            section.dataset.party = String(partyId);
+            section.classList.remove("is-collapsed");
+            section.addEventListener("dragover", (event) => {
+              if (dragState.type !== "party") return;
+              event.preventDefault();
+              section.classList.add("drag-target");
+            });
+            section.addEventListener("dragleave", () => {
+              section.classList.remove("drag-target");
+            });
+            section.addEventListener("drop", (event) => {
+              if (dragState.type !== "party") return;
+              event.preventDefault();
+              section.classList.remove("drag-target");
+              if (!dragState.partyId) return;
+              if (!reorderParties(dragState.partyId, partyId)) {
+                onDragEnd();
+                return;
+              }
+              saveStore(store);
+              renderAll();
+              setStatus(`PT${dragState.partyId}をPT${partyId}の位置へ移動しました`);
+              onDragEnd();
+            });
+          }
+          if (header) {
+            header.setAttribute("aria-expanded", "true");
+            const toggleSection = () => {
+              if (!section) return;
+              const nextCollapsed = !section.classList.contains("is-collapsed");
+              section.classList.toggle("is-collapsed", nextCollapsed);
+              header.setAttribute("aria-expanded", nextCollapsed ? "false" : "true");
+            };
+            header.setAttribute("draggable", "true");
+            header.addEventListener("dragstart", (event) => {
+              if (event.target.closest("input, button")) {
+                event.preventDefault();
+                return;
+              }
+              dragState.type = "party";
+              dragState.partyId = partyId;
+              dragState.slotIndex = null;
+              dragState.skillIndex = null;
+              if (section) {
+                section.classList.add("is-dragging");
+              }
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", "party");
+            });
+            header.addEventListener("dragend", () => {
+              if (section) {
+                section.classList.remove("is-dragging");
+              }
+              onDragEnd();
+            });
+            header.addEventListener("click", (event) => {
+              if (event.target.closest("input")) return;
+              toggleSection();
+            });
+            header.addEventListener("keydown", (event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              if (event.target.closest("input")) return;
+              event.preventDefault();
+              toggleSection();
+            });
+            if (toggleButton) {
+              toggleButton.addEventListener("click", (event) => {
+                event.stopPropagation();
+                toggleSection();
+              });
+            }
+          }
           if (nameInput) {
-            nameInput.placeholder = `PT ${partyId}`;
+            nameInput.placeholder = defaultPartyName;
             nameInput.value = store.partyNames[String(partyId)] || "";
+            nameInput.addEventListener("click", (event) => event.stopPropagation());
+            nameInput.addEventListener("keydown", (event) => event.stopPropagation());
             nameInput.addEventListener("input", () => {
               store.partyNames[String(partyId)] = nameInput.value.trim();
               saveStore(store);
@@ -726,6 +843,9 @@ import {
           }
           actions.forEach((button) => {
             button.dataset.party = String(partyId);
+            button.addEventListener("click", (event) => {
+              event.stopPropagation();
+            });
             const action = button.dataset.action;
             if (action === "add") {
               button.addEventListener("click", () => {
